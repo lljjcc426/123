@@ -20,43 +20,43 @@
   },
   "source_diagnostics": {
     "住院": {
-      "detail_rows": 747222,
-      "official_detail_rows": 746878,
+      "detail_rows": 747308,
+      "official_detail_rows": 746964,
       "official_order_events": 368427,
       "official_report_events": 522191,
-      "unique_ordered_project_names": 515,
-      "unclassified_general_other_share": 0.030549835448359704,
+      "unique_ordered_project_names": 505,
+      "unclassified_general_other_share": 0.03057577071987405,
       "non_service_item_rows": 25729,
-      "non_service_item_share": 0.03444873192141153,
-      "bedside_row_share": 0.20968217031429498,
-      "fasting_constraint_row_share": 0.2012443799388923,
-      "bladder_constraint_row_share": 0.10239557196757704
+      "non_service_item_share": 0.034444765745069376,
+      "bedside_row_share": 0.20969149784996333,
+      "fasting_constraint_row_share": 0.2012265651356692,
+      "bladder_constraint_row_share": 0.10238779914426933
     },
     "门诊": {
-      "detail_rows": 376378,
-      "official_detail_rows": 376014,
+      "detail_rows": 376972,
+      "official_detail_rows": 376605,
       "official_order_events": 300446,
       "official_report_events": 307517,
-      "unique_ordered_project_names": 703,
-      "unclassified_general_other_share": 0.005058322296510236,
-      "non_service_item_rows": 176,
-      "non_service_item_share": 0.000468067678331126,
-      "bedside_row_share": 0.009887929704745037,
-      "fasting_constraint_row_share": 0.20401633981713446,
-      "bladder_constraint_row_share": 0.17781518773237168
+      "unique_ordered_project_names": 569,
+      "unclassified_general_other_share": 0.005993016555807809,
+      "non_service_item_rows": 177,
+      "non_service_item_share": 0.00046998844943641215,
+      "bedside_row_share": 0.009938795289494299,
+      "fasting_constraint_row_share": 0.20374928638759443,
+      "bladder_constraint_row_share": 0.17756004301589198
     },
     "体检": {
-      "detail_rows": 675977,
-      "official_detail_rows": 675958,
+      "detail_rows": 676687,
+      "official_detail_rows": 676668,
       "official_order_events": 278670,
       "official_report_events": 285556,
-      "unique_ordered_project_names": 268,
-      "unclassified_general_other_share": 6.65721834788552e-05,
-      "non_service_item_rows": 0,
-      "non_service_item_share": 0.0,
-      "bedside_row_share": 8.876291130514027e-06,
-      "fasting_constraint_row_share": 0.32678657549729423,
-      "bladder_constraint_row_share": 0.287100677852766
+      "unique_ordered_project_names": 206,
+      "unclassified_general_other_share": 8.128062801846696e-05,
+      "non_service_item_rows": 1,
+      "non_service_item_share": 1.4778296003357629e-06,
+      "bedside_row_share": 2.2167444005036442e-05,
+      "fasting_constraint_row_share": 0.32644960305496934,
+      "bladder_constraint_row_share": 0.28688810465398096
     }
   },
   "report_gap_proxy": {
@@ -66,8 +66,8 @@
     "gap_over_60_min_count": 45802,
     "valid_gap_proxy_count": 766889,
     "valid_gap_proxy_share_of_all_episodes": 0.8402274091831413,
-    "single_project_valid_gap_proxy_count": 511626,
-    "single_project_valid_gap_proxy_share": 0.6671447888807898,
+    "single_project_valid_gap_proxy_count": 510957,
+    "single_project_valid_gap_proxy_share": 0.6662724331682942,
     "overall_single_project_valid_gap_median_min": 7.0,
     "interpretation": "类别代理仅使用单项目事件；相邻报告间隔仍含扫查、书写、等待和批量出报告效应，只能作为相对负荷代理，不能解释为服务时长。"
   },
@@ -76,11 +76,11 @@
     "valid_doctor_days_for_efficiency": 33349,
     "doctor_count_estimated": 48,
     "daily_validity_rule": "至少3个报告事件，报告跨度大于0且不超过16小时；日对数生产率在1%与99%分位温莎化。",
-    "empirical_bayes_prior_log_mean": -0.36010474637486545,
-    "empirical_bayes_between_doctor_variance": 0.10220294082023883,
+    "empirical_bayes_prior_log_mean": -0.35898107266257184,
+    "empirical_bayes_between_doctor_variance": 0.10201299090328873,
     "table6_matched_doctor_days": 34212,
-    "table6_project_count_correlation": 0.8094349626785402,
-    "table6_project_count_MAE": 8.335554776101953,
+    "table6_project_count_correlation": 0.8095438126863008,
+    "table6_project_count_MAE": 8.30655910206945,
     "table6_first_time_median_abs_difference_min": 0.6333333333333333,
     "table6_last_time_median_abs_difference_min": 0.6666666666666666,
     "interpretation": "因报告时刻包含非扫查时间，因子仅表示历史报告吞吐代理；当前医生名单未给出时不能直接映射为未来个人速度。"
@@ -91,180 +91,180 @@
       "basis": "开单事件",
       "multiproject_coefficient": 1.0,
       "episode_count": 368427,
-      "multiproject_episode_count": 188446,
-      "multiproject_episode_share": 0.5114880288361059,
-      "total_nominal_workload_min": 6407200.0,
-      "mean_nominal_workload_per_episode_min": 17.390690693135955
+      "multiproject_episode_count": 188511,
+      "multiproject_episode_share": 0.5116644545595193,
+      "total_nominal_workload_min": 6407932.5,
+      "mean_nominal_workload_per_episode_min": 17.392678875326727
     },
     {
       "source": "住院",
       "basis": "开单事件",
       "multiproject_coefficient": 0.9,
       "episode_count": 368427,
-      "multiproject_episode_count": 188446,
-      "multiproject_episode_share": 0.5114880288361059,
-      "total_nominal_workload_min": 5935152.5,
-      "mean_nominal_workload_per_episode_min": 16.109439590475183
+      "multiproject_episode_count": 188511,
+      "multiproject_episode_share": 0.5116644545595193,
+      "total_nominal_workload_min": 5935739.5,
+      "mean_nominal_workload_per_episode_min": 16.111032850469698
     },
     {
       "source": "住院",
       "basis": "开单事件",
       "multiproject_coefficient": 0.8,
       "episode_count": 368427,
-      "multiproject_episode_count": 188446,
-      "multiproject_episode_share": 0.5114880288361059,
-      "total_nominal_workload_min": 5463105.0,
-      "mean_nominal_workload_per_episode_min": 14.82818848781441
+      "multiproject_episode_count": 188511,
+      "multiproject_episode_share": 0.5116644545595193,
+      "total_nominal_workload_min": 5463546.5,
+      "mean_nominal_workload_per_episode_min": 14.829386825612673
     },
     {
       "source": "住院",
       "basis": "报告事件",
       "multiproject_coefficient": 1.0,
       "episode_count": 522191,
-      "multiproject_episode_count": 127631,
-      "multiproject_episode_share": 0.2444144000949844,
-      "total_nominal_workload_min": 6415652.5,
-      "mean_nominal_workload_per_episode_min": 12.28602656882252
+      "multiproject_episode_count": 127696,
+      "multiproject_episode_share": 0.24453887562213825,
+      "total_nominal_workload_min": 6416385.0,
+      "mean_nominal_workload_per_episode_min": 12.287429312263138
     },
     {
       "source": "住院",
       "basis": "报告事件",
       "multiproject_coefficient": 0.9,
       "episode_count": 522191,
-      "multiproject_episode_count": 127631,
-      "multiproject_episode_share": 0.2444144000949844,
-      "total_nominal_workload_min": 6154623.25,
-      "mean_nominal_workload_per_episode_min": 11.78615343810981
+      "multiproject_episode_count": 127696,
+      "multiproject_episode_share": 0.24453887562213825,
+      "total_nominal_workload_min": 6155210.25,
+      "mean_nominal_workload_per_episode_min": 11.787277547870415
     },
     {
       "source": "住院",
       "basis": "报告事件",
       "multiproject_coefficient": 0.8,
       "episode_count": 522191,
-      "multiproject_episode_count": 127631,
-      "multiproject_episode_share": 0.2444144000949844,
-      "total_nominal_workload_min": 5893594.0,
-      "mean_nominal_workload_per_episode_min": 11.286280307397101
+      "multiproject_episode_count": 127696,
+      "multiproject_episode_share": 0.24453887562213825,
+      "total_nominal_workload_min": 5894035.5,
+      "mean_nominal_workload_per_episode_min": 11.287125783477693
     },
     {
       "source": "门诊",
       "basis": "开单事件",
       "multiproject_coefficient": 1.0,
       "episode_count": 300446,
-      "multiproject_episode_count": 58743,
-      "multiproject_episode_share": 0.19551932793247373,
-      "total_nominal_workload_min": 4252312.5,
-      "mean_nominal_workload_per_episode_min": 14.153333710550315
+      "multiproject_episode_count": 59244,
+      "multiproject_episode_share": 0.19718684888465815,
+      "total_nominal_workload_min": 4256995.0,
+      "mean_nominal_workload_per_episode_min": 14.168918873940742
     },
     {
       "source": "门诊",
       "basis": "开单事件",
       "multiproject_coefficient": 0.9,
       "episode_count": 300446,
-      "multiproject_episode_count": 58743,
-      "multiproject_episode_share": 0.19551932793247373,
-      "total_nominal_workload_min": 4127895.75,
-      "mean_nominal_workload_per_episode_min": 13.7392268494172
+      "multiproject_episode_count": 59244,
+      "multiproject_episode_share": 0.19718684888465815,
+      "total_nominal_workload_min": 4130826.5,
+      "mean_nominal_workload_per_episode_min": 13.748981514148966
     },
     {
       "source": "门诊",
       "basis": "开单事件",
       "multiproject_coefficient": 0.8,
       "episode_count": 300446,
-      "multiproject_episode_count": 58743,
-      "multiproject_episode_share": 0.19551932793247373,
-      "total_nominal_workload_min": 4003479.0,
-      "mean_nominal_workload_per_episode_min": 13.325119988284085
+      "multiproject_episode_count": 59244,
+      "multiproject_episode_share": 0.19718684888465815,
+      "total_nominal_workload_min": 4004658.0,
+      "mean_nominal_workload_per_episode_min": 13.32904415435719
     },
     {
       "source": "门诊",
       "basis": "报告事件",
       "multiproject_coefficient": 1.0,
       "episode_count": 307517,
-      "multiproject_episode_count": 54206,
-      "multiproject_episode_share": 0.17626992979249928,
-      "total_nominal_workload_min": 4262227.5,
-      "mean_nominal_workload_per_episode_min": 13.86013618759288
+      "multiproject_episode_count": 54715,
+      "multiproject_episode_share": 0.17792512283873738,
+      "total_nominal_workload_min": 4266955.0,
+      "mean_nominal_workload_per_episode_min": 13.875509321435889
     },
     {
       "source": "门诊",
       "basis": "报告事件",
       "multiproject_coefficient": 0.9,
       "episode_count": 307517,
-      "multiproject_episode_count": 54206,
-      "multiproject_episode_share": 0.17626992979249928,
-      "total_nominal_workload_min": 4151712.5,
-      "mean_nominal_workload_per_episode_min": 13.500757681689143
+      "multiproject_episode_count": 54715,
+      "multiproject_episode_share": 0.17792512283873738,
+      "total_nominal_workload_min": 4154675.0,
+      "mean_nominal_workload_per_episode_min": 13.510391295440577
     },
     {
       "source": "门诊",
       "basis": "报告事件",
       "multiproject_coefficient": 0.8,
       "episode_count": 307517,
-      "multiproject_episode_count": 54206,
-      "multiproject_episode_share": 0.17626992979249928,
-      "total_nominal_workload_min": 4041197.5,
-      "mean_nominal_workload_per_episode_min": 13.141379175785405
+      "multiproject_episode_count": 54715,
+      "multiproject_episode_share": 0.17792512283873738,
+      "total_nominal_workload_min": 4042395.0,
+      "mean_nominal_workload_per_episode_min": 13.145273269445266
     },
     {
       "source": "体检",
       "basis": "开单事件",
       "multiproject_coefficient": 1.0,
       "episode_count": 278670,
-      "multiproject_episode_count": 191833,
-      "multiproject_episode_share": 0.6883876987117379,
-      "total_nominal_workload_min": 5162092.5,
-      "mean_nominal_workload_per_episode_min": 18.524033803423404
+      "multiproject_episode_count": 192255,
+      "multiproject_episode_share": 0.6899020346646572,
+      "total_nominal_workload_min": 5167402.5,
+      "mean_nominal_workload_per_episode_min": 18.543088599418667
     },
     {
       "source": "体检",
       "basis": "开单事件",
       "multiproject_coefficient": 0.9,
       "episode_count": 278670,
-      "multiproject_episode_count": 191833,
-      "multiproject_episode_share": 0.6883876987117379,
-      "total_nominal_workload_min": 4712333.5,
-      "mean_nominal_workload_per_episode_min": 16.910085405676966
+      "multiproject_episode_count": 192255,
+      "multiproject_episode_share": 0.6899020346646572,
+      "total_nominal_workload_min": 4716793.0,
+      "mean_nominal_workload_per_episode_min": 16.926088204686547
     },
     {
       "source": "体检",
       "basis": "开单事件",
       "multiproject_coefficient": 0.8,
       "episode_count": 278670,
-      "multiproject_episode_count": 191833,
-      "multiproject_episode_share": 0.6883876987117379,
-      "total_nominal_workload_min": 4262574.5,
-      "mean_nominal_workload_per_episode_min": 15.296137007930527
+      "multiproject_episode_count": 192255,
+      "multiproject_episode_share": 0.6899020346646572,
+      "total_nominal_workload_min": 4266183.5,
+      "mean_nominal_workload_per_episode_min": 15.309087809954427
     },
     {
       "source": "体检",
       "basis": "报告事件",
       "multiproject_coefficient": 1.0,
       "episode_count": 285556,
-      "multiproject_episode_count": 191300,
-      "multiproject_episode_share": 0.6699211363095154,
-      "total_nominal_workload_min": 5161922.5,
-      "mean_nominal_workload_per_episode_min": 18.076743265769235
+      "multiproject_episode_count": 191722,
+      "multiproject_episode_share": 0.6713989550210817,
+      "total_nominal_workload_min": 5167232.5,
+      "mean_nominal_workload_per_episode_min": 18.095338567566433
     },
     {
       "source": "体检",
       "basis": "报告事件",
       "multiproject_coefficient": 0.9,
       "episode_count": 285556,
-      "multiproject_episode_count": 191300,
-      "multiproject_episode_share": 0.6699211363095154,
-      "total_nominal_workload_min": 4718179.75,
-      "mean_nominal_workload_per_episode_min": 16.52278274664164
+      "multiproject_episode_count": 191722,
+      "multiproject_episode_share": 0.6713989550210817,
+      "total_nominal_workload_min": 4722639.25,
+      "mean_nominal_workload_per_episode_min": 16.538399648405218
     },
     {
       "source": "体检",
       "basis": "报告事件",
       "multiproject_coefficient": 0.8,
       "episode_count": 285556,
-      "multiproject_episode_count": 191300,
-      "multiproject_episode_share": 0.6699211363095154,
-      "total_nominal_workload_min": 4274437.0,
-      "mean_nominal_workload_per_episode_min": 14.968822227514043
+      "multiproject_episode_count": 191722,
+      "multiproject_episode_share": 0.6713989550210817,
+      "total_nominal_workload_min": 4278046.0,
+      "mean_nominal_workload_per_episode_min": 14.981460729244
     }
   ],
   "non_service_items": [
@@ -287,10 +287,22 @@
       "bedside_record_count": 0
     },
     {
+      "source": "体检",
+      "ordered_project": "超声计算机图文报告,彩超",
+      "record_count": 1,
+      "bedside_record_count": 0
+    },
+    {
       "source": "门诊",
       "ordered_project": "床旁B超检查加收",
       "record_count": 176,
       "bedside_record_count": 176
+    },
+    {
+      "source": "门诊",
+      "ordered_project": "超声计算机图文报告,彩超",
+      "record_count": 1,
+      "bedside_record_count": 0
     }
   ],
   "modeling_boundary": {

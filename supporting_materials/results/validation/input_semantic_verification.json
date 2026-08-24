@@ -1,0 +1,65 @@
+{
+  "passed": true,
+  "checks": {
+    "compatible_rooms_trace_to_A_B_C_evidence": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": "每个项目房间均追溯到表1的A/B/C级证据"
+    },
+    "no_blanket_category_fallback": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": "不得按整个项目族授权"
+    },
+    "level_D_excluded_from_hard_capability": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": "D级项目数=15"
+    },
+    "bedside_is_project_capability_intersection": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": "床旁可行集只能是项目能力与7号机地点能力的交集"
+    },
+    "all_former_fallback_projects_reviewed": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": "review_rows=50"
+    },
+    "review_has_explicit_treatment": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": "每个原回退项目都有最终处理"
+    },
+    "event_keys_unique": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": "事件ID唯一"
+    },
+    "item_keys_unique": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": "事件内项目序号唯一"
+    },
+    "train_holdout_boundary": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": "住院按开单日、背景按计划日代理进入留出期"
+    }
+  },
+  "semantic_counts": {
+    "events": 167361,
+    "items": 328950,
+    "projects": 211,
+    "evidence_levels": {
+      "C": 92,
+      "B": 60,
+      "A": 44,
+      "D": 15
+    },
+    "former_fallback_review_rows": 50,
+    "bedside_audit_rows": 55
+  },
+  "doctor_qualification_boundary": "历史医生-项目族证据可生成，但题面33名未来医生与历史ID无法一一映射，故主模型只使用总并发容量并假设同一时隙内资质可替代，不伪造实名资质矩阵。",
+  "report_completion_boundary": "数据无扫查结束字段；最后任务结束仅作为排程层报告完成代理。"
+}

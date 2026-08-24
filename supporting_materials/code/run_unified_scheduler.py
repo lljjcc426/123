@@ -52,7 +52,13 @@ def as_bool(series: pd.Series) -> pd.Series:
 def room_tuple(value: Any) -> tuple[str, ...]:
     if pd.isna(value) or not str(value).strip():
         return ()
-    return tuple(sorted({part for part in str(value).split("|") if part}, key=int))
+    normalized: set[str] = set()
+    for part in str(value).split("|"):
+        if not part:
+            continue
+        number = float(part)
+        normalized.add(str(int(number)) if number.is_integer() else part)
+    return tuple(sorted(normalized, key=int))
 
 
 @dataclass(frozen=True)
@@ -67,6 +73,7 @@ class Task:
     fasting: bool
     bladder: bool
     bedside: bool
+    bladder_ready_dt: pd.Timestamp
 
 
 @dataclass
@@ -267,11 +274,13 @@ def load_inputs(
     special_mode: str,
     capability_mode: str,
     bladder_minutes: int,
+    preparation_mode: str = "item",
+    special_seed: int | None = None,
 ) -> tuple[pd.DataFrame, dict[str, list[Task]], pd.DataFrame, list[str], dict[str, str]]:
     events = pd.read_csv(
         INPUT / "events.csv",
         encoding="utf-8-sig",
-        parse_dates=["order_dt", "planned_date", "release_dt", "deadline_dt"],
+        parse_dates=["order_dt", "planned_date", "base_release_dt", "bladder_ready_dt", "release_dt", "deadline_dt"],
     )
     for column in [
         "mandatory_background",
@@ -282,22 +291,47 @@ def load_inputs(
         "bladder",
     ]:
         events[column] = as_bool(events[column])
-    if bladder_minutes != source_config.BLADDER_PREPARATION_MINUTES:
-        events["release_dt"] = source_config.release_times(events, bladder_minutes)
+    if special_seed is not None:
+        events["special_case"] = False
+        rng = np.random.default_rng(special_seed)
+        for cohort_value in [False, True]:
+            eligible = events.index[events["evaluation_cohort"].eq(cohort_value)].to_numpy()
+            count = int(round(0.05 * len(eligible)))
+            if count:
+                events.loc[rng.choice(eligible, size=count, replace=False), "special_case"] = True
+    events["bladder_ready_dt"] = (
+        events["order_dt"] + pd.Timedelta(minutes=bladder_minutes)
+    ).map(source_config.round_up_slot)
+    if preparation_mode == "event":
+        events["release_dt"] = source_config.release_times(events, bladder_minutes, True)
+    elif preparation_mode == "item":
+        events["release_dt"] = source_config.release_times(events, bladder_minutes, False)
+    else:
+        raise ValueError(f"unknown preparation mode: {preparation_mode}")
 
     items = pd.read_csv(INPUT / "items.csv", encoding="utf-8-sig")
-    for column in ["bedside", "fasting", "bladder", "uses_fallback_if_nonbedside"]:
+    for column in [
+        "item_bedside", "item_fasting", "item_bladder",
+        "event_bedside", "event_fasting", "event_bladder",
+        "uses_fallback_if_nonbedside",
+    ]:
         items[column] = as_bool(items[column])
     event_special = events.set_index("event_id")["special_case"].to_dict()
+    event_bladder_ready = events.set_index("event_id")["bladder_ready_dt"].to_dict()
     tasks: dict[str, list[Task]] = {}
     for event_id, group in items.groupby("event_id", sort=False):
         event_tasks: list[Task] = []
         use_upper = special_mode == "five_percent_upper" and bool(event_special[event_id])
+        event_ready = pd.Timestamp(event_bladder_ready[event_id])
         for row in group.sort_values("item_index", kind="stable").itertuples(index=False):
-            if capability_mode == "strict" and row.capability_level == "category_fallback":
+            bedside = bool(row.event_bedside) if preparation_mode == "event" else bool(row.item_bedside)
+            fasting = bool(row.event_fasting) if preparation_mode == "event" else bool(row.item_fasting)
+            bladder = bool(row.event_bladder) if preparation_mode == "event" else bool(row.item_bladder)
+            room_text = row.bedside_compatible_rooms if bedside else row.project_compatible_rooms
+            if capability_mode == "strict" and str(row.capability_level) == "C":
                 rooms: tuple[str, ...] = ()
             else:
-                rooms = room_tuple(row.compatible_rooms)
+                rooms = room_tuple(room_text)
             duration = row.duration_upper_min if use_upper else row.duration_nominal_min
             event_tasks.append(
                 Task(
@@ -308,9 +342,10 @@ def load_inputs(
                     duration_slots=max(1, int(math.ceil(float(duration) / SLOT_MINUTES))),
                     compatible_rooms=rooms,
                     capability_level=str(row.capability_level),
-                    fasting=bool(row.fasting),
-                    bladder=bool(row.bladder),
-                    bedside=bool(row.bedside),
+                    fasting=fasting,
+                    bladder=bladder,
+                    bedside=bedside,
+                    bladder_ready_dt=event_ready,
                 )
             )
         tasks[str(event_id)] = event_tasks
@@ -364,9 +399,10 @@ def tentative_plan(
     cursor = release
     last_room: str | None = None
     for position, task in enumerate(ordered_tasks, start=1):
+        task_release = max(cursor, task.bladder_ready_dt) if task.bladder else cursor
         found = calendar.find_task(
             task,
-            cursor,
+            task_release,
             latest_end,
             last_room,
             room_override=room_override,

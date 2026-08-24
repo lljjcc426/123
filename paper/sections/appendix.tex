@@ -1,36 +1,81 @@
-\section{交付结果与复现顺序}
+\section{复现说明与权威结果}
 
-本附录属于正文之外的支撑材料。完整复现顺序为：原始工作簿转存为Parquet；运行问题一主分析、科室需求、设备能力和医生—项目时长估计；构建统一患者事件；运行联合调度；运行独立核验；最后生成论文图表。随机种子在代码中固定，评价期与预热期分别按事件数最近整数抽取5\%复杂病例。
+本附录不计入30页正文上限。唯一权威结果根目录为
+\path{supporting_materials/results/final_frozen/}。复现顺序为：原始工作簿转存Parquet；运行数据与问题一分析；构建统一患者—项目输入；运行P2纯住院；并行运行P3的$\alpha$网格与敏感性；运行小窗口精确对照和校准；独立验证P2、P3；生成冻结清单；最后生成论文图表并用XeLaTeX编译。
 
-主结果包括三种策略与七个补充敏感性情景的指标表、最终患者任务排程、患者结果、住院推荐表、设备日占用和独立核验报告。\texttt{final\_patient\_task\_schedule.csv}为本文唯一最终患者级方案；联合稀缺度只作为门诊/体检服务率更高的帕累托备选，旧的总容量线性模型和按月重置回放不作为本文证据。
+冻结清单记录训练期、留出期、固定参数、主随机种子、5个敏感性种子、P2/P3推荐点和权威文件的一次性SHA256。哈希只用于明确最终交付版本，不在开发过程中反复校验。
 
-\section{问题一主分析完整程序}
-\lstinputlisting[style=paperpython,caption={项目分类、需求趋势、时长与医生效率分析}]{../supporting_materials/code/analyze_p1.py}
+\lstinputlisting[style=paperpython,language={},caption={最终模型与结果冻结清单}]{../supporting_materials/results/final_frozen/FINAL_RESULT_MANIFEST.json}
 
-\section{训练期科室需求完整程序}
-\lstinputlisting[style=paperpython,caption={训练期与全期审计科室需求统计}]{../supporting_materials/code/analyze_department_demand.py}
+\section{数据审计与问题一程序}
 
-\section{设备能力证据审计完整程序}
-\lstinputlisting[style=paperpython,caption={表1项目—设备能力证据与独立检查}]{../supporting_materials/code/audit_capability.py}
+\lstinputlisting[style=paperpython,caption={原始数据字段、范围与重复审计}]{../supporting_materials/code/audit_data.py}
 
-\section{医生—项目时长估计完整程序}
-\lstinputlisting[style=paperpython,caption={训练期医生—项目调度时长收缩估计}]{../supporting_materials/code/estimate_doctor_project_times.py}
+\lstinputlisting[style=paperpython,caption={问题一事件、需求、时长与医生效率分析}]{../supporting_materials/code/analyze_p1.py}
 
-\section{统一患者级输入完整程序}
-\lstinputlisting[style=paperpython,caption={三类患者事件、项目兼容、特殊病例与医生容量构建}]{../supporting_materials/code/build_unified_inputs.py}
+\lstinputlisting[style=paperpython,caption={训练期科室需求分析}]{../supporting_materials/code/analyze_department_demand.py}
 
-\section{连续日历联合排程完整程序}
-\lstinputlisting[style=paperpython,caption={共享设备和医生容量下的患者级联合排程}]{../supporting_materials/code/run_unified_scheduler.py}
+\section{统一输入与能力审计程序}
 
-\section{独立可行性核验完整程序}
-\lstinputlisting[style=paperpython,caption={不调用调度器内核的独立约束核验}]{../supporting_materials/code/verify_unified_schedule.py}
+\lstinputlisting[style=paperpython,caption={统一患者事件、项目设备证据和医生容量构建}]{../supporting_materials/code/build_unified_inputs.py}
 
-\section{论文图表生成完整程序}
-\lstinputlisting[style=paperpython,caption={论文九组图形生成程序}]{../supporting_materials/code/make_unified_figures.py}
+\lstinputlisting[style=paperpython,caption={旧版50个类别回退项目逐项复核}]{../supporting_materials/code/build_legacy_fallback_audit.py}
 
-\lstinputlisting[style=paperpython,caption={论文结果表生成程序}]{../supporting_materials/code/build_unified_paper_tables.py}
+\lstinputlisting[style=paperpython,caption={模型输入语义与训练留出边界验证}]{../supporting_materials/code/verify_model_semantics.py}
 
-\section{最终结果摘要}
-\lstinputlisting[style=paperpython,language={},caption={联合模型机器可读摘要}]{../supporting_materials/results/unified_schedule/summary.json}
+\section{排程内核与问题二、三程序}
 
-\lstinputlisting[style=paperpython,language={},caption={独立核验机器可读报告}]{../supporting_materials/results/unified_schedule/independent_verification.json}
+\lstinputlisting[style=paperpython,caption={患者级连续日历排程内核}]{../supporting_materials/code/run_unified_scheduler.py}
+
+\lstinputlisting[style=paperpython,caption={P2纯住院、P3网格与敏感性场景运行器}]{../supporting_materials/code/run_pre_freeze_scenarios.py}
+
+\section{精确对照与现实校准程序}
+
+\lstinputlisting[style=paperpython,caption={代表性小窗口CP-SAT精确对照}]{../supporting_materials/code/benchmark_exact_scheduler.py}
+
+\lstinputlisting[style=paperpython,caption={C0--C7历史现实校准}]{../supporting_materials/code/run_calibration_scenarios.py}
+
+\section{独立验证与结果冻结程序}
+
+\lstinputlisting[style=paperpython,caption={不调用调度内核的排程可行性验证}]{../supporting_materials/code/verify_unified_schedule.py}
+
+\lstinputlisting[style=paperpython,caption={技术审计、唯一结果与冻结报告生成}]{../supporting_materials/code/finalize_model_audits.py}
+
+\section{论文图表生成程序}
+
+\lstinputlisting[style=paperpython,caption={论文十幅矢量图生成}]{../supporting_materials/code/make_unified_figures.py}
+
+\lstinputlisting[style=paperpython,caption={论文十个数据表生成}]{../supporting_materials/code/build_unified_paper_tables.py}
+
+\section{关键机器可读结果}
+
+\lstinputlisting[style=paperpython,language={},caption={问题二纯住院结果摘要}]{../supporting_materials/results/final_frozen/p2_inpatient_only/summary.json}
+
+\lstinputlisting[style=paperpython,language={},caption={问题三Pareto推荐点}]{../supporting_materials/results/final_frozen/p3_joint/selection.json}
+
+\lstinputlisting[style=paperpython,language={},caption={问题二独立验证报告}]{../supporting_materials/results/final_frozen/p2_inpatient_only/independent_verification.json}
+
+\lstinputlisting[style=paperpython,language={},caption={问题三独立验证报告}]{../supporting_materials/results/final_frozen/p3_joint/independent_verification.json}
+
+\lstinputlisting[style=paperpython,language={},caption={五个特殊病例种子汇总}]{../supporting_materials/results/final_frozen/special_seed_summary.json}
+
+\section{输出字段说明}
+
+\begin{longtable}{p{0.27\textwidth}p{0.65\textwidth}}
+\toprule
+文件/字段 & 含义 \\
+\midrule
+\endfirsthead
+\toprule
+文件/字段 & 含义 \\
+\midrule
+\endhead
+\path{events.csv} & 事件层输入，含来源、释放、截止、计划日代理、项目数、准备标记、复杂病例和评价边界。\\
+\path{items.csv} & 项目层输入，含规范项目、项目族、时长上下界、匹配方式、项目与事件准备标记和候选设备。\\
+\path{final_patient_task_schedule.csv} & 已排任务的事件、项目序位、开始、结束、设备、转运、准备和匹配方式。\\
+\path{final_patient_outcomes.csv} & 全部结果事件的完整完成、截止达标、首检和末检时刻；未排事件亦保留。\\
+\path{pareto_metrics.csv} & 各背景下限点的住院率、背景率、等待、利用率和配额诊断。\\
+\path{inpatient_recommended_schedule.csv} & 按首检时刻排序的住院患者—项目可执行推荐表。\\
+\path{independent_verification.json} & 独立重建约束后的逐项违规数与通过标志。\\
+\bottomrule
+\end{longtable}

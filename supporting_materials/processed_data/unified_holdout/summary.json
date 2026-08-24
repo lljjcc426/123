@@ -6,7 +6,7 @@
   },
   "items": {
     "住院": 141429,
-    "体检": 117701,
+    "体检": 117765,
     "门诊": 69756
   },
   "special_case_count": 8368,
@@ -15,15 +15,24 @@
   "bladder_preparation_minutes": 60,
   "bladder_readiness_rule": "max(plan-day start, order time plus preparation) for background; order time plus preparation for inpatient",
   "capability": {
-    "unique_projects": 210,
-    "projects_with_strict_match": 160,
-    "projects_using_category_fallback": 50,
-    "item_share_strict_or_bedside": 0.8640836034370573,
-    "fallback_item_share_by_source": {
-      "住院": 0.0183484292471841,
-      "体检": 0.30554540743069303,
-      "门诊": 0.08806410918057228
-    }
+    "unique_projects": 211,
+    "projects_by_evidence_level": {
+      "C": 92,
+      "B": 60,
+      "A": 44,
+      "D": 15
+    },
+    "projects_excluded_level_D": 15,
+    "blanket_category_fallback_used": false,
+    "schedulable_item_share": 0.9534640522875817,
+    "level_D_item_share_by_source": {
+      "住院": 0.0015696922130538997,
+      "体检": 0.0004925062624718719,
+      "门诊": 0.009017145478525146
+    },
+    "reviewed_former_fallback_project_count": 44,
+    "bedside_item_count": 26002,
+    "bedside_item_machine7_semantic_coverage": 0.4195061918313976
   },
   "doctor_capacity": {
     "method": "weekday-by-5-minute median of training-day active session proxy",

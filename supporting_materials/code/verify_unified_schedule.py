@@ -7,6 +7,7 @@ and result tables so that implementation errors are not silently shared.
 
 from __future__ import annotations
 
+import argparse
 import json
 import math
 from pathlib import Path
@@ -17,7 +18,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 INPUT = ROOT / "supporting_materials" / "processed_data" / "unified_holdout"
-RESULT = ROOT / "supporting_materials" / "results" / "unified_schedule"
+DEFAULT_RESULT = ROOT / "supporting_materials" / "results" / "unified_schedule"
 SLOT_MINUTES = 5
 TRANSFER_MINUTES = 10
 
@@ -31,7 +32,13 @@ def as_bool(series: pd.Series) -> pd.Series:
 def room_set(value: object) -> set[str]:
     if pd.isna(value):
         return set()
-    return {part for part in str(value).split("|") if part}
+    result: set[str] = set()
+    for part in str(value).split("|"):
+        if not part:
+            continue
+        number = float(part)
+        result.add(str(int(number)) if number.is_integer() else part)
+    return result
 
 
 def slot_index(timestamp: pd.Timestamp) -> int | None:
@@ -44,33 +51,47 @@ def slot_index(timestamp: pd.Timestamp) -> int | None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--result-dir", type=Path, default=DEFAULT_RESULT)
+    parser.add_argument("--preparation-mode", choices=["item", "event"], default="item")
+    parser.add_argument("--transfer-minutes", type=int, default=TRANSFER_MINUTES)
+    args = parser.parse_args()
+    result_dir = args.result_dir
     events = pd.read_csv(
         INPUT / "events.csv",
         encoding="utf-8-sig",
-        parse_dates=["order_dt", "planned_date", "release_dt", "deadline_dt"],
+        parse_dates=["order_dt", "planned_date", "base_release_dt", "bladder_ready_dt", "release_dt", "deadline_dt"],
     )
     items = pd.read_csv(INPUT / "items.csv", encoding="utf-8-sig", low_memory=False)
     schedule = pd.read_csv(
-        RESULT / "final_patient_task_schedule.csv",
+        result_dir / "final_patient_task_schedule.csv",
         encoding="utf-8-sig",
         parse_dates=["start_dt", "end_dt", "release_dt", "deadline_dt"],
         dtype={"room_id": "string"},
         low_memory=False,
     )
     outcomes = pd.read_csv(
-        RESULT / "final_patient_outcomes.csv",
+        result_dir / "final_patient_outcomes.csv",
         encoding="utf-8-sig",
         parse_dates=["release_dt", "deadline_dt", "first_start_dt", "completion_dt"],
     )
     capacity = pd.read_csv(INPUT / "doctor_slot_capacity.csv", encoding="utf-8-sig")
     for frame, columns in [
         (events, ["special_case", "evaluation_cohort", "bedside", "fasting", "bladder"]),
-        (items, ["bedside", "fasting", "bladder"]),
+        (items, ["item_bedside", "item_fasting", "item_bladder", "event_bedside", "event_fasting", "event_bladder"]),
         (schedule, ["bedside", "fasting", "bladder", "room_switch_from_previous"]),
         (outcomes, ["complete_event", "deadline_met", "evaluation_cohort"]),
     ]:
         for column in columns:
             frame[column] = as_bool(frame[column])
+
+    # P2 intentionally exports the inpatient cohort only, whereas P3 exports
+    # all three sources.  Scope the independent verifier to the cohort named
+    # by the outcome table so that an inpatient-only result is not compared
+    # against unrelated outpatient and physical-exam events.
+    result_event_ids = set(outcomes["event_id"].astype(str))
+    events = events[events["event_id"].astype(str).isin(result_event_ids)].copy()
+    items = items[items["event_id"].astype(str).isin(result_event_ids)].copy()
 
     checks: dict[str, dict[str, object]] = {}
 
@@ -96,6 +117,10 @@ def main() -> None:
         validate="many_to_one",
     )
     record("scheduled_task_exists_in_input", int(merged["_merge"].ne("both").sum()))
+    prefix = "item" if args.preparation_mode == "item" else "event"
+    merged["bedside_input"] = merged[f"{prefix}_bedside"]
+    merged["fasting_input"] = merged[f"{prefix}_fasting"]
+    merged["bladder_input"] = merged[f"{prefix}_bladder"]
 
     event_meta = events.set_index("event_id")
     merged["special_case_input"] = merged["event_id"].map(event_meta["special_case"])
@@ -119,18 +144,27 @@ def main() -> None:
 
     compat_bad = [
         room not in room_set(rooms)
-        for room, rooms in zip(merged["room_id"].astype(str), merged["compatible_rooms"])
+        for room, rooms in zip(
+            merged["room_id"].astype(str),
+            np.where(merged["bedside_input"], merged["bedside_compatible_rooms"], merged["project_compatible_rooms"]),
+        )
     ]
     record("project_room_compatibility", int(sum(compat_bad)))
     record(
         "bedside_uses_room_7",
-        int((merged["bedside_scheduled"] & merged["room_id"].ne("7")).sum()),
+        int((merged["bedside_input"] & merged["room_id"].ne("7")).sum()),
     )
 
-    release = schedule["event_id"].map(event_meta["release_dt"])
+    release_column = "base_release_dt" if args.preparation_mode == "item" else "release_dt"
+    release = schedule["event_id"].map(event_meta[release_column])
     deadline = schedule["event_id"].map(event_meta["deadline_dt"])
     record("task_not_before_release", int(schedule["start_dt"].lt(release).sum()))
     record("task_complete_by_event_deadline", int(schedule["end_dt"].gt(deadline).sum()))
+    bladder_ready = schedule["event_id"].map(pd.to_datetime(event_meta["bladder_ready_dt"]))
+    record(
+        "bladder_task_after_readiness",
+        int((merged["bladder_input"] & merged["start_dt"].lt(bladder_ready.to_numpy())).sum()),
+    )
     record(
         "five_minute_grid",
         int(
@@ -151,8 +185,8 @@ def main() -> None:
             block_bad += 1
     record("inside_single_work_block", block_bad)
 
-    fasting_bad = schedule["fasting"] & schedule["end_dt"].gt(
-        schedule["start_dt"].dt.normalize() + pd.Timedelta(hours=10)
+    fasting_bad = merged["fasting_input"] & merged["end_dt"].gt(
+        merged["start_dt"].dt.normalize() + pd.Timedelta(hours=10)
     )
     record("fasting_complete_by_10", int(fasting_bad.sum()))
 
@@ -177,7 +211,7 @@ def main() -> None:
         current_rooms = group["room_id"].iloc[1:].reset_index(drop=True)
         switches = current_rooms.ne(prior_rooms)
         event_overlap += int(starts.lt(ends).sum())
-        transfer_bad += int((switches & starts.lt(ends + pd.Timedelta(minutes=TRANSFER_MINUTES))).sum())
+        transfer_bad += int((switches & starts.lt(ends + pd.Timedelta(minutes=args.transfer_minutes))).sum())
     record("contiguous_event_sequence_numbers", sequence_bad)
     record("no_same_patient_task_overlap", event_overlap)
     record("cross_room_transfer_at_least_10min", transfer_bad)
@@ -233,8 +267,8 @@ def main() -> None:
         "input_events": int(len(events)),
         "checks": checks,
     }
-    RESULT.mkdir(parents=True, exist_ok=True)
-    (RESULT / "independent_verification.json").write_text(
+    result_dir.mkdir(parents=True, exist_ok=True)
+    (result_dir / "independent_verification.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     print(json.dumps(report, ensure_ascii=False, indent=2))

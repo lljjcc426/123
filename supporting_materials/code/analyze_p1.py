@@ -215,6 +215,29 @@ def normalize_project(series: pd.Series) -> pd.Series:
     return result.replace("", pd.NA)
 
 
+def expand_embedded_project_lists(frame: pd.DataFrame) -> pd.DataFrame:
+    """Split the source system's explicit ``][`` multi-item encoding.
+
+    A single order field can contain several separately billed examinations,
+    encoded as ``[item,modality][item,modality]``.  Only the bracket boundary
+    is used as a separator; commas and Chinese enumeration marks inside an
+    examination name are retained.  This preserves compound anatomy names
+    while making the scheduling task count agree with the source semantics.
+    """
+    expanded = frame.copy()
+    expanded["ordered_project_original"] = expanded["ordered_project"]
+    expanded["ordered_project"] = clean_text(expanded["ordered_project"]).str.split(
+        r"\]\s*\[", regex=True
+    )
+    expanded = expanded.explode("ordered_project", ignore_index=True)
+    expanded["ordered_project"] = (
+        clean_text(expanded["ordered_project"])
+        .str.replace(r"^[\[\],]+|[\[\],]+$", "", regex=True)
+    )
+    expanded["source_component_index"] = expanded.groupby("source_row").cumcount() + 1
+    return expanded
+
+
 def classify_projects(series: pd.Series) -> pd.DataFrame:
     normalized = normalize_project(series)
     category = pd.Series("一般其他", index=series.index, dtype="string")
@@ -235,6 +258,7 @@ def classify_projects(series: pd.Series) -> pd.DataFrame:
 
 def load_detail(path: Path, source: str) -> pd.DataFrame:
     frame = pd.read_parquet(path).rename(columns=DETAIL_RENAME)
+    frame = expand_embedded_project_lists(frame)
     for column in [
         "patient_id",
         "order_doctor_id",
@@ -581,24 +605,30 @@ def peak_flat_summary(daily: pd.DataFrame) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
     for source, basis, frame in frames:
-        recent = frame[frame["date"].between(VALIDATION_START, VALIDATION_END)].copy()
-        recent["weekday"] = recent["date"].dt.dayofweek
-        recent["month"] = recent["date"].dt.month
-        values = recent["episode_count"]
+        training = frame[
+            frame["date"].between(START_DATE, VALIDATION_START - pd.Timedelta(days=1))
+        ].copy()
+        holdout = frame[frame["date"].between(VALIDATION_START, VALIDATION_END)].copy()
+        training["weekday"] = training["date"].dt.dayofweek
+        training["month"] = training["date"].dt.month
+        values = training["episode_count"]
         q45, q50, q55, q90, q95 = values.quantile([0.45, 0.5, 0.55, 0.9, 0.95])
-        peak_candidates = recent[recent["episode_count"].ge(q90)].copy()
+        peak_candidates = training[training["episode_count"].ge(q90)].copy()
         peak_candidates["distance"] = (peak_candidates["episode_count"] - q90).abs()
-        flat_candidates = recent[recent["episode_count"].between(q45, q55, inclusive="both")].copy()
+        flat_candidates = training[
+            training["episode_count"].between(q45, q55, inclusive="both")
+        ].copy()
         flat_candidates["distance"] = (flat_candidates["episode_count"] - q50).abs()
         peak_row = peak_candidates.sort_values(["distance", "date"]).iloc[0]
         flat_row = flat_candidates.sort_values(["distance", "date"]).iloc[0]
-        weekday_median = recent.groupby("weekday")["episode_count"].median()
-        month_median = recent.groupby("month")["episode_count"].median()
+        weekday_median = training.groupby("weekday")["episode_count"].median()
+        month_median = training.groupby("month")["episode_count"].median()
         rows.append(
             {
                 "source": source,
                 "basis": basis,
-                "period": f"{VALIDATION_START.date()}至{VALIDATION_END.date()}",
+                "period": f"{START_DATE.date()}至{(VALIDATION_START - pd.Timedelta(days=1)).date()}",
+                "threshold_data_role": "training_only",
                 "q45": float(q45),
                 "median_flat_level": float(q50),
                 "q55": float(q55),
@@ -612,6 +642,11 @@ def peak_flat_summary(daily: pd.DataFrame) -> pd.DataFrame:
                 "peak_weekday_median": float(weekday_median.max()),
                 "peak_calendar_month": int(month_median.idxmax()),
                 "peak_month_daily_median": float(month_median.max()),
+                "holdout_peak_day_share": float(holdout["episode_count"].ge(q90).mean()),
+                "holdout_stress_day_share": float(holdout["episode_count"].ge(q95).mean()),
+                "holdout_flat_day_share": float(
+                    holdout["episode_count"].between(q45, q55, inclusive="both").mean()
+                ),
             }
         )
     return pd.DataFrame(rows)
@@ -1020,7 +1055,7 @@ def write_report(
 
 ## 1. 结论摘要
 
-本分析覆盖 2019-03-01 至 2025-03-31。三类患者按开单日合计的验证期平峰中位数为 {combined_order['median_flat_level']:.0f} 个开单事件/日，90% 高峰阈值为 {combined_order['q90_peak_threshold']:.0f} 个/日，95% 压力阈值为 {combined_order['q95_stress_threshold']:.0f} 个/日；代表性平峰日为 {combined_order['representative_flat_date']}（{combined_order['representative_flat_count']} 个），代表性高峰日为 {combined_order['representative_peak_date']}（{combined_order['representative_peak_count']} 个）。这些阈值来自固定在最后12个月的时间顺序验证窗，不以全样本最大值定义高峰。
+本分析覆盖 2019-03-01 至 2025-03-31。三类患者按开单日合计的训练期平峰中位数为 {combined_order['median_flat_level']:.0f} 个开单事件/日，90% 高峰阈值为 {combined_order['q90_peak_threshold']:.0f} 个/日，95% 压力阈值为 {combined_order['q95_stress_threshold']:.0f} 个/日；代表性平峰日为 {combined_order['representative_flat_date']}（{combined_order['representative_flat_count']} 个），代表性高峰日为 {combined_order['representative_peak_date']}（{combined_order['representative_peak_count']} 个）。阈值和代表日只由 2019-03-01 至 2024-03-31 的训练期确定，最后12个月仅检验这些阈值在未来时段的表现。
 
 项目分类采用“互斥项目族 + 非互斥资源标记”：项目族决定基础时长与设备能力，床旁、空腹上午、充盈膀胱三个标记决定地点或时段约束。规则逐条按优先级匹配，项目字典保留原名、规范名、命中类别和记录量，能够逐项追溯。
 
@@ -1052,7 +1087,7 @@ def write_report(
 
 {markdown_table(peak_flat, ['source', 'basis', 'median_flat_level', 'q90_peak_threshold', 'q95_stress_threshold', 'representative_flat_date', 'representative_peak_date', 'peak_weekday', 'peak_calendar_month'])}
 
-高峰阈值取验证期日事件数90%分位，压力阈值取95%分位；平峰水平取中位数，代表日选取最接近对应阈值的实际日期。月份用月内“每日事件数中位数”排序，避免月份天数不同造成总量偏差。
+高峰阈值取训练期日事件数90%分位，压力阈值取95%分位；平峰水平取训练期中位数，代表日也只从训练期选择。留出期仅统计落入训练期平峰、高峰和压力阈值的日期比例。月份用月内“每日事件数中位数”排序，避免月份天数不同造成总量偏差。
 
 完整日序列同时按周、月、年汇总。各序列在全观察期内的日均负荷最高周如下；周首日期为周一：
 

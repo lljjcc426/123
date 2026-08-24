@@ -1,0 +1,106 @@
+{
+  "passed": true,
+  "schedule_rows": 176739,
+  "scheduled_events": 100303,
+  "input_events": 167361,
+  "checks": {
+    "unique_exported_task_key": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": "each scheduled task must occur exactly once"
+    },
+    "scheduled_task_exists_in_input": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "duration_matches_5pct_scenario": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "project_room_compatibility": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "bedside_uses_room_7": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "task_not_before_release": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "task_complete_by_event_deadline": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "bladder_task_after_readiness": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "five_minute_grid": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "inside_single_work_block": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "fasting_complete_by_10": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "no_room_overlap": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "contiguous_event_sequence_numbers": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "no_same_patient_task_overlap": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "cross_room_transfer_at_least_10min": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "doctor_capacity_defined": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "doctor_concurrency_within_capacity": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": {
+        "max_observed_load": 20,
+        "max_capacity": 20
+      }
+    },
+    "outcome_complete_flag_consistency": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "outcome_deadline_flag_consistency": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    }
+  }
+}

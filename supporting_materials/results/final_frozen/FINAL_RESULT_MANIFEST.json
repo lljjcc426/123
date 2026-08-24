@@ -1,0 +1,151 @@
+{
+  "MODEL_AND_RESULTS_FROZEN": true,
+  "code_version": "working-tree pre-freeze audit; see git commit if committed",
+  "random_seed": 20260824,
+  "special_seed_experiment": [
+    11,
+    29,
+    47,
+    83,
+    131
+  ],
+  "training_period": [
+    "2019-03-01",
+    "2024-03-31"
+  ],
+  "evaluation_period": [
+    "2024-04-01",
+    "2025-03-31"
+  ],
+  "main_assumptions": {
+    "work_blocks": "08:00-12:00 and 13:00-17:00",
+    "slot_minutes": 5,
+    "transfer_minutes": 10,
+    "bladder_minutes": 60,
+    "preparation_granularity": "item",
+    "capability": "Table-1 project-level A/B/C reviewed mapping; D excluded",
+    "doctor_capacity": "training weekday-by-slot concurrent proxy",
+    "report_completion": "last scheduled task end proxy"
+  },
+  "p2": {
+    "scenario": "P2_INPATIENT_ONLY",
+    "selected_policy": "FCFS_SHARED",
+    "preparation_granularity": "item",
+    "metrics": {
+      "scenario": "P2_INPATIENT_ONLY",
+      "policy": "FCFS_SHARED",
+      "inpatient_events": 70771,
+      "inpatient_complete_48h": 60359,
+      "inpatient_48h_rate": 0.8528775911037006,
+      "inpatient_scheduled_complete": 60359,
+      "inpatient_unscheduled": 10412,
+      "inpatient_wait_p50_hours_conditional": 3.5833333333333335,
+      "inpatient_wait_p90_hours_conditional": 22.083333333333332,
+      "inpatient_wait_p95_hours_conditional": 23.666666666666668,
+      "inpatient_room_switch_rate_multi": 0.5811783598205881,
+      "background_events": 0,
+      "background_on_planned_day": 0,
+      "background_on_time_rate": NaN,
+      "background_scheduled_complete": 0,
+      "fallback_scheduled_task_share": 0.0,
+      "scheduled_minutes": 1344260.0,
+      "staffed_capacity_utilization": 0.5451010208529748,
+      "transfer_minutes_assumption": 10
+    }
+  },
+  "p3": {
+    "selection_rule": "minimum normalized Euclidean distance to the attainable Pareto ideal",
+    "selected_alpha": 0.3,
+    "selected_metrics": {
+      "scenario": "P3_ALPHA_0.30",
+      "policy": "FCFS_SHARED",
+      "inpatient_events": 70771,
+      "inpatient_complete_48h": 42730,
+      "inpatient_48h_rate": 0.6037783838012746,
+      "inpatient_scheduled_complete": 42730,
+      "inpatient_unscheduled": 28041,
+      "inpatient_wait_p50_hours_conditional": 3.0,
+      "inpatient_wait_p90_hours_conditional": 21.75,
+      "inpatient_wait_p95_hours_conditional": 38.583333333333336,
+      "inpatient_room_switch_rate_multi": 0.2503737748491057,
+      "background_events": 96046,
+      "background_on_planned_day": 57177,
+      "background_on_time_rate": 0.5953084980113695,
+      "background_scheduled_complete": 57177,
+      "fallback_scheduled_task_share": 0.0,
+      "scheduled_minutes": 2066410.0,
+      "staffed_capacity_utilization": 0.8379347748953296,
+      "background_target_alpha": 0.3,
+      "quota_shortfall_days": 1,
+      "quota_target_events": 28977,
+      "quota_achieved_before_inpatient": 28970,
+      "preparation_granularity": "item",
+      "special_seed": 20260824,
+      "capability_mode": "hierarchical",
+      "capacity_column": "capacity_main",
+      "bladder_minutes": 60,
+      "transfer_minutes": 10,
+      "pareto_nondominated": true,
+      "distance_to_ideal": 0.915027740483536
+    }
+  },
+  "selected_alpha": 0.3,
+  "freeze_checks": {
+    "train_holdout_no_leakage": true,
+    "all_50_fallback_reviewed": true,
+    "no_blanket_category_fallback": true,
+    "bedside_semantics_passed": true,
+    "p2_exists": true,
+    "p3_pareto_exists": true,
+    "historical_calibration_exists": true,
+    "exact_benchmark_exists": true,
+    "preparation_sensitivity_exists": true,
+    "multi_seed_exists": true,
+    "input_semantics_passed": true,
+    "p2_schedule_verification_passed": true,
+    "p3_schedule_verification_passed": true,
+    "authoritative_result_unique": true
+  },
+  "authoritative_files": [
+    {
+      "path": "supporting_materials/results/final_frozen/p2_inpatient_only/summary.json",
+      "sha256": "c0f56d73665de63866809d0aece0306ae6f55146b29ac0e0dca940bd4a299995"
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p2_inpatient_only/final_patient_task_schedule.csv",
+      "sha256": "5041bc01d041b049da4a646c5fe85f7d216d07b1286d24d9c3711ec9b2b800ed"
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p2_inpatient_only/final_patient_outcomes.csv",
+      "sha256": "dc5a8a52032d476c5f7f2b48b0e6afcb02159ed31bf2a47c0af271fb6e7699f6"
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p3_joint/selection.json",
+      "sha256": "335704ce743cade525801bbdc32e80b752d4c6e00828733429d4f266992ca12a"
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p3_joint/pareto_metrics.csv",
+      "sha256": "4ac5771da518746431c72fed0bdf7f87e5f8f25df5a1fdf46abdb8ade8d817aa"
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p3_joint/final_patient_task_schedule.csv",
+      "sha256": "92063a75f7fb51ee46fef5ba13366a82a317e88fc662f1964f306defe282a3ee"
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p3_joint/final_patient_outcomes.csv",
+      "sha256": "85e3d5610af39c92e86e47c9536dac47a5569abb0298435d87b1b132253ace29"
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/sensitivity_metrics.csv",
+      "sha256": "dddd62023592b85f5b6e8e4dd5f064fe1a227e25a15ed7d99e007f96bbf43184"
+    },
+    {
+      "path": "supporting_materials/results/exact_benchmark/exact_vs_heuristic_metrics.csv",
+      "sha256": "769db232f3f6665ffdb0858a0503f71ff11a796e539231d32e5d89d7862513d7"
+    },
+    {
+      "path": "supporting_materials/results/calibration/calibration_metrics.csv",
+      "sha256": "0dd2abe60e59f9a31e2d6127ab0fa929a9546b22c972a61255c625bfe70d22d0"
+    }
+  ]
+}

@@ -95,7 +95,11 @@ def round_up_slot(timestamp: pd.Timestamp) -> pd.Timestamp:
     return timestamp.ceil(f"{SLOT_MINUTES}min")
 
 
-def release_times(events: pd.DataFrame, bladder_minutes: int) -> pd.Series:
+def release_times(
+    events: pd.DataFrame,
+    bladder_minutes: int,
+    apply_event_bladder: bool = True,
+) -> pd.Series:
     """Return the earliest physically available time for each event.
 
     A background patient whose order already exists can complete preparation
@@ -113,11 +117,12 @@ def release_times(events: pd.DataFrame, bladder_minutes: int) -> pd.Series:
     prepared = (pd.to_datetime(events["order_dt"]) + pd.Timedelta(minutes=bladder_minutes)).map(
         round_up_slot
     )
-    bladder = events["bladder"].astype(bool)
-    release.loc[bladder] = np.maximum(
-        release.loc[bladder].values.astype("datetime64[ns]"),
-        prepared.loc[bladder].values.astype("datetime64[ns]"),
-    )
+    if apply_event_bladder:
+        bladder = events["bladder"].astype(bool)
+        release.loc[bladder] = np.maximum(
+            release.loc[bladder].values.astype("datetime64[ns]"),
+            prepared.loc[bladder].values.astype("datetime64[ns]"),
+        )
     return pd.to_datetime(release)
 
 
@@ -135,6 +140,9 @@ def unique_join(values: Iterable[Any]) -> str:
 
 def load_source(source: str, filename: str) -> pd.DataFrame:
     frame = p1.load_detail(RAW / filename, source)
+    frame["item_bedside"] = as_bool(frame["床旁标记"])
+    frame["item_fasting"] = as_bool(frame["空腹上午标记"])
+    frame["item_bladder"] = as_bool(frame["充盈膀胱标记"])
     frame["patient_id"] = clean_id(frame["patient_id"])
     missing = frame["patient_id"].isna()
     frame.loc[missing, "patient_id"] = "MISSING_" + frame.loc[missing, "source_row"].astype(str)
@@ -198,9 +206,8 @@ def build_patient_tables() -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
         load_source(source, filename) for source, filename in p1.SOURCE_FILES.items()
     ]
     items = pd.concat(source_frames, ignore_index=True)
-    items["bedside"] = as_bool(items["bedside"])
-    items["fasting"] = as_bool(items["fasting"])
-    items["bladder"] = as_bool(items["bladder"])
+    for column in ["item_bedside", "item_fasting", "item_bladder", "bedside", "fasting", "bladder"]:
+        items[column] = as_bool(items[column])
     items["item_index"] = items.groupby("event_id").cumcount() + 1
 
     events = (
@@ -224,6 +231,12 @@ def build_patient_tables() -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
     events.loc[~inpatient, "deadline_dt"] = (
         events.loc[~inpatient, "planned_date"] + pd.Timedelta(hours=DAY_END_HOUR)
     )
+    events["base_release_dt"] = release_times(
+        events, BLADDER_PREPARATION_MINUTES, apply_event_bladder=False
+    )
+    events["bladder_ready_dt"] = (
+        pd.to_datetime(events["order_dt"]) + pd.Timedelta(minutes=BLADDER_PREPARATION_MINUTES)
+    ).map(round_up_slot)
     events["release_dt"] = release_times(events, BLADDER_PREPARATION_MINUTES)
     events["deadline_dt"] = pd.to_datetime(events["deadline_dt"])
 
@@ -250,6 +263,8 @@ def build_patient_tables() -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
         "patient_id",
         "order_dt",
         "planned_date",
+        "base_release_dt",
+        "bladder_ready_dt",
         "release_dt",
         "deadline_dt",
         "mandatory_background",
@@ -277,11 +292,21 @@ def build_patient_tables() -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
             "duration_lower_min",
             "duration_nominal_min",
             "duration_upper_min",
+            "item_bedside",
+            "item_fasting",
+            "item_bladder",
             "bedside",
             "fasting",
             "bladder",
         ]
     ].copy()
+    items = items.rename(
+        columns={
+            "bedside": "event_bedside",
+            "fasting": "event_fasting",
+            "bladder": "event_bladder",
+        }
+    )
     diagnostics = {
         "events": {source: int(count) for source, count in events["source"].value_counts().items()},
         "items": {source: int(count) for source, count in items.merge(events[["event_id", "source"]], on="event_id")["source"].value_counts().items()},
@@ -341,7 +366,69 @@ def semantic_core(value: str) -> str:
     return re.sub(r"[\[\]()（）,:：，、+\-_/\\\s]", "", text)
 
 
-def project_machine_matches(items: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+def reviewed_alias_rule(project: str) -> tuple[str, list[str], str, str]:
+    """Map a formerly category-fallback project to auditable Table-1 evidence."""
+    if project == "B":
+        return "D", [], "invalid_label", "单字符不能确定检查部位或路径"
+    if re.search(r"穿刺|活检|介入引导|临床操作的.*引导", project):
+        return "D", [], "specialized_procedure_not_listed", "表1没有对应穿刺、活检或介入项目能力"
+    if "肺部超声" in project:
+        return "D", [], "pediatric_lung_not_listed", "表1儿科专项只列头颅和髋关节，胸水项目不能替代新生儿肺部超声"
+    if "胡桃夹" in project or "精囊" in project:
+        return "D", [], "anatomy_not_listed", "表1没有足够接近的专项部位证据"
+    if project.startswith("床旁"):
+        if re.search(r"腹部|腹水|泌尿系|前列腺|胸部|胸水", project):
+            return "C", [r"带有床旁的超声项目"], "explicit_bedside_generalization", "7号机原文只对常规床旁部位作有限泛化"
+        return "D", [], "bedside_location_without_specialty", "床旁地点证据不足以覆盖该专项项目"
+    if re.search(r"男性B超", project):
+        return "B", [r"腹部", r"泌尿系", r"前列腺"], "reviewed_compound_intersection", "腹部、泌尿系与前列腺能力取同机交集"
+    if "腹部+泌尿系" in project:
+        patterns = [r"腹部", r"泌尿系"]
+        if "前列腺" in project:
+            patterns.append(r"前列腺")
+        return "B", patterns, "reviewed_compound_intersection", "组合项目按组成部位能力取同机交集"
+    if re.search(r"腹部常规|彩超：肝|腹部\(肝|腹膜后", project):
+        pattern = r"膜腹后|腹膜后" if "腹膜后" in project else r"腹部"
+        return "B", [pattern], "reviewed_anatomy_alias", "保留腹部或腹膜后解剖语义的名称变体"
+    if "胃肠道、阑尾" in project:
+        return "B", [r"胃肠道", r"阑尾"], "reviewed_compound_intersection", "表1胃肠道和阑尾证据取同机交集"
+    if "胃十二指肠充盈声学造影" in project:
+        return "C", [r"胃肠道"], "explicit_anatomy_generalization", "充盈声学造影沿用胃肠道超声设备能力"
+    if project == "腹水":
+        return "B", [r"腹水"], "reviewed_anatomy_alias", "与表1腹盆腔腹水为同一部位项目"
+    if "腹水加定位" in project:
+        return "B", [r"腹水", r"定位"], "reviewed_compound_intersection", "同机须同时具有腹水和定位证据"
+    if re.search(r"双肾彩超|泌尿系B超|前列腺彩超|妇科B超\(经腹\)", project):
+        pattern = r"前列腺" if "前列腺" in project else (r"经腹妇科" if "妇科" in project else r"双肾|泌尿系")
+        return "B", [pattern], "reviewed_anatomy_alias", "B超/彩超后缀差异不改变检查部位"
+    if re.search(r"泌尿系彩超.*前列腺", project):
+        return "B", [r"泌尿系", r"前列腺"], "reviewed_compound_intersection", "泌尿系与前列腺能力取同机交集"
+    if re.search(r"经阴道妇科|阴道彩超", project):
+        return "B", [r"经阴道|腔内彩超"], "reviewed_path_alias", "保留经阴道检查路径的同义名称"
+    if re.search(r"双乳腺|甲状腺|双眼|关节|软组织", project):
+        pattern = r"乳腺" if "乳腺" in project else r"甲状腺" if "甲状腺" in project else r"双眼" if "双眼" in project else r"关节" if "关节" in project else r"上肢或下肢.*软组织"
+        return "B", [pattern], "reviewed_anatomy_alias", "保留浅表器官的具体解剖部位"
+    if "子宫、输卵管超声造影" in project:
+        return "B", [r"输卵管超声造影"], "reviewed_specific_alias", "与表1输卵管超声造影为明确包含关系"
+    return "D", [], "no_sufficient_table1_evidence", "未找到可保留部位和检查路径的表1证据"
+
+
+def machines_matching_patterns(evidence: pd.DataFrame, patterns: list[str]) -> pd.DataFrame:
+    if not patterns:
+        return pd.DataFrame(columns=["machine_id", "current_room", "evidence_text", "evidence_norm_text"])
+    machine_text = evidence.groupby(["machine_id", "current_room"], as_index=False).agg(
+        evidence_text=("evidence_project", lambda values: "；".join(map(str, values))),
+        evidence_norm_text=("evidence_norm", lambda values: "；".join(map(str, values))),
+    )
+    mask = pd.Series(True, index=machine_text.index)
+    for pattern in patterns:
+        mask &= machine_text["evidence_norm_text"].str.contains(pattern, regex=True, na=False)
+    return machine_text[mask].copy()
+
+
+def project_machine_matches(
+    items: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     equipment = load_equipment()
     evidence = evidence_table(equipment)
     projects = items[["project_norm", "category"]].drop_duplicates().sort_values("project_norm")
@@ -353,18 +440,19 @@ def project_machine_matches(items: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataF
         category_evidence = evidence[evidence["evidence_category"].eq(category_name)]
         for row in category_evidence.itertuples(index=False):
             token = str(row.evidence_norm)
+            level: str | None = None
             rule: str | None = None
             if project == token:
-                rule = "exact_project"
+                level, rule = "A", "exact_project"
             elif min(len(project), len(token)) >= 6 and (project in token or token in project):
-                rule = "specific_text_containment"
+                level, rule = "B", "specific_text_containment"
             elif min(len(semantic_core(project)), len(semantic_core(token))) >= 4 and (
                 semantic_core(project) in semantic_core(token)
                 or semantic_core(token) in semantic_core(project)
             ):
-                rule = "semantic_core_match"
+                level, rule = "B", "semantic_core_match"
             elif explicit_generic_match(project, category_name, token):
-                rule = "explicit_generic_descriptor"
+                level, rule = "C", "explicit_generic_descriptor"
             if rule:
                 matches.append(
                     {
@@ -372,78 +460,101 @@ def project_machine_matches(items: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataF
                         "category": category_name,
                         "machine_id": str(row.machine_id),
                         "current_room": row.current_room,
-                        "match_level": "strict",
+                        "match_level": level,
                         "match_rule": rule,
                         "evidence_project": row.evidence_project,
                     }
                 )
+        bedside_level, _, bedside_rule, bedside_reason = reviewed_alias_rule(project)
+        if project.startswith("床旁") and bedside_level == "C":
+            matches.append(
+                {
+                    "project_norm": project_row.project_norm,
+                    "category": category_name,
+                    "machine_id": "7",
+                    "current_room": equipment.loc[equipment["machine_id"].eq("7"), "current_room"].iloc[0],
+                    "match_level": "C",
+                    "match_rule": bedside_rule,
+                    "evidence_project": f"带有床旁的超声项目；{bedside_reason}",
+                }
+            )
 
-        # Machine 7 explicitly says it performs bedside ultrasound projects.
-        matches.append(
+    direct = pd.DataFrame(matches)
+    direct_projects = set(direct["project_norm"]) if not direct.empty else set()
+    unmatched = projects[~projects["project_norm"].isin(direct_projects)]
+    review_rows: list[dict[str, Any]] = []
+    for project_row in unmatched.itertuples(index=False):
+        project = str(project_row.project_norm)
+        level, patterns, rule, reason = reviewed_alias_rule(project)
+        selected = machines_matching_patterns(evidence, patterns)
+        if level == "C" and project.startswith("床旁"):
+            selected = selected[selected["machine_id"].eq("7")]
+        if level != "D" and selected.empty:
+            level, rule = "D", "review_rule_without_machine"
+            reason = f"{reason}，但没有同一设备满足全部证据"
+        category_candidates = evidence[evidence["evidence_category"].eq(project_row.category)]
+        if level != "D":
+            for row in selected.itertuples(index=False):
+                matches.append(
+                    {
+                        "project_norm": project,
+                        "category": project_row.category,
+                        "machine_id": str(row.machine_id),
+                        "current_room": row.current_room,
+                        "match_level": level,
+                        "match_rule": rule,
+                        "evidence_project": row.evidence_text,
+                    }
+                )
+        review_rows.append(
             {
-                "project_norm": project_row.project_norm,
-                "category": category_name,
-                "machine_id": "7",
-                "current_room": equipment.loc[equipment["machine_id"].eq("7"), "current_room"].iloc[0],
-                "match_level": "bedside_only",
-                "match_rule": "explicit_bedside_descriptor",
-                "evidence_project": "带有床旁的超声项目",
+                "project_norm": project,
+                "category": project_row.category,
+                "current_category_fallback_candidates": "|".join(
+                    sorted(category_candidates["machine_id"].astype(str).unique(), key=int)
+                ),
+                "review_level": level,
+                "semantic_evidence_sufficient": level != "D",
+                "fallback_reasonable": level != "D",
+                "risk_level": "high" if level == "D" else ("medium" if level == "C" else "low"),
+                "final_recommended_treatment": "exclude_from_main_hard_capability" if level == "D" else "use_reviewed_project_mapping",
+                "final_rooms": "|".join(sorted(selected["machine_id"].astype(str).unique(), key=int)) if level != "D" else "",
+                "table1_evidence_by_machine": " || ".join(
+                    f"{row.machine_id}:{row.evidence_text}" for row in selected.itertuples(index=False)
+                ) if level != "D" else "",
+                "review_rule": rule,
+                "review_reason": reason,
             }
         )
 
     match_frame = pd.DataFrame(matches).drop_duplicates(
         ["project_norm", "machine_id", "match_level"], keep="first"
     )
-
-    # A fallback is retained only for projects for which table 1 has no strict
-    # text match. It remains labelled and is tested separately; it is never
-    # described as project-level evidence.
-    strict_counts = (
-        match_frame[match_frame["match_level"].eq("strict")]
-        .groupby("project_norm")["machine_id"]
-        .nunique()
-    )
-    unmatched = projects[~projects["project_norm"].isin(strict_counts.index)]
-    fallback_rows: list[dict[str, Any]] = []
-    for project_row in unmatched.itertuples(index=False):
-        subset = evidence[evidence["evidence_category"].eq(project_row.category)]
-        for row in subset.drop_duplicates("machine_id").itertuples(index=False):
-            fallback_rows.append(
-                {
-                    "project_norm": project_row.project_norm,
-                    "category": project_row.category,
-                    "machine_id": str(row.machine_id),
-                    "current_room": row.current_room,
-                    "match_level": "category_fallback",
-                    "match_rule": "same_category_without_project_text_match",
-                    "evidence_project": row.evidence_project,
-                }
-            )
-    if fallback_rows:
-        match_frame = pd.concat([match_frame, pd.DataFrame(fallback_rows)], ignore_index=True)
-
-    rows: list[dict[str, Any]] = []
-    grouped = match_frame.groupby(["project_norm", "category"], sort=False)
-    for (project, category_name), group in grouped:
-        strict_rooms = sorted(
-            group.loc[group["match_level"].eq("strict"), "machine_id"].unique(), key=int
-        )
-        fallback_rooms = sorted(
-            group.loc[group["match_level"].eq("category_fallback"), "machine_id"].unique(), key=int
-        )
-        rows.append(
+    summary_rows: list[dict[str, Any]] = []
+    for project_row in projects.itertuples(index=False):
+        group = match_frame[match_frame["project_norm"].eq(project_row.project_norm)]
+        rooms = sorted(group["machine_id"].astype(str).unique(), key=int) if len(group) else []
+        levels = sorted(set(group["match_level"]), key=lambda value: "ABC".index(value)) if len(group) else ["D"]
+        summary_rows.append(
             {
-                "project_norm": project,
-                "category": category_name,
-                "strict_rooms": "|".join(strict_rooms),
-                "fallback_rooms": "|".join(fallback_rooms),
-                "strict_room_count": len(strict_rooms),
-                "fallback_room_count": len(fallback_rooms),
-                "uses_fallback_if_nonbedside": len(strict_rooms) == 0,
+                "project_norm": project_row.project_norm,
+                "category": project_row.category,
+                "strict_rooms": "|".join(rooms),
+                "fallback_rooms": "",
+                "strict_room_count": len(rooms),
+                "fallback_room_count": 0,
+                "uses_fallback_if_nonbedside": False,
+                "final_rooms": "|".join(rooms),
+                "final_room_count": len(rooms),
+                "evidence_level": levels[0],
+                "semantic_status": "confirmed" if rooms else "level_D_excluded",
             }
         )
-    summary = pd.DataFrame(rows)
-    return match_frame.sort_values(["project_norm", "match_level", "machine_id"]), summary
+    return (
+        match_frame.sort_values(["project_norm", "match_level", "machine_id"]),
+        pd.DataFrame(summary_rows),
+        pd.DataFrame(review_rows),
+    )
 
 
 def build_training_room_scarcity() -> pd.DataFrame:
@@ -453,7 +564,7 @@ def build_training_room_scarcity() -> pd.DataFrame:
     )
     non_service = catalog["non_service_item"].astype(str).str.lower().eq("true")
     catalog = catalog[~non_service].copy()
-    _, project_summary = project_machine_matches(catalog[["project_norm", "category"]])
+    _, project_summary, _ = project_machine_matches(catalog[["project_norm", "category"]])
     demand = (
         catalog.groupby(
             ["project_norm", "category", "duration_nominal_min"], as_index=False
@@ -468,11 +579,7 @@ def build_training_room_scarcity() -> pd.DataFrame:
     )
     room_weight: dict[str, float] = defaultdict(float)
     for row in demand.itertuples(index=False):
-        if "床旁" in str(row.project_norm):
-            rooms = ["7"]
-        else:
-            room_text = row.strict_rooms if int(row.strict_room_count) > 0 else row.fallback_rooms
-            rooms = [part for part in str(room_text).split("|") if part and part != "nan"]
+        rooms = [part for part in str(row.final_rooms).split("|") if part and part != "nan"]
         if not rooms:
             continue
         contribution = float(row.record_count) * float(row.duration_nominal_min) / len(rooms)
@@ -601,25 +708,20 @@ def attach_room_sets(items: pd.DataFrame, project_summary: pd.DataFrame) -> pd.D
         how="left",
         validate="many_to_one",
     )
-    if merged["strict_room_count"].isna().any():
+    if merged["final_room_count"].isna().any():
         raise ValueError("存在未进入能力匹配的项目")
-    merged["compatible_rooms"] = np.where(
-        merged["bedside"],
+    merged["project_compatible_rooms"] = merged["final_rooms"].fillna("")
+    merged["bedside_compatible_rooms"] = np.where(
+        merged["project_compatible_rooms"].str.split("|").map(lambda values: "7" in values),
         "7",
-        np.where(
-            merged["strict_room_count"].gt(0),
-            merged["strict_rooms"],
-            merged["fallback_rooms"],
-        ),
+        "",
     )
-    merged["capability_level"] = np.where(
-        merged["bedside"],
-        "bedside_explicit",
-        np.where(merged["strict_room_count"].gt(0), "strict_project", "category_fallback"),
+    merged["compatible_rooms"] = np.where(
+        merged["item_bedside"],
+        merged["bedside_compatible_rooms"],
+        merged["project_compatible_rooms"],
     )
-    if merged["compatible_rooms"].fillna("").eq("").any():
-        examples = merged.loc[merged["compatible_rooms"].fillna("").eq(""), "project_norm"].head().tolist()
-        raise ValueError(f"存在无任何兼容机器的项目: {examples}")
+    merged["capability_level"] = merged["evidence_level"]
     return merged
 
 
@@ -630,7 +732,7 @@ def main() -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     events, items, diagnostics = build_patient_tables()
-    match_rows, project_summary = project_machine_matches(items)
+    match_rows, project_summary, fallback_review = project_machine_matches(items)
     items = attach_room_sets(items, project_summary)
     slot_capacity, daily_capacity = build_doctor_slot_capacity()
     room_scarcity = build_training_room_scarcity()
@@ -642,6 +744,48 @@ def main() -> None:
     )
     project_summary.to_csv(
         args.output_dir / "project_machine_summary.csv", index=False, encoding="utf-8-sig"
+    )
+    source_lookup = events[["event_id", "source"]]
+    review_counts = (
+        items.merge(source_lookup, on="event_id", how="left")
+        .groupby(["project_norm", "source"])
+        .size()
+        .unstack(fill_value=0)
+        .reset_index()
+    )
+    fallback_review = fallback_review.merge(review_counts, on="project_norm", how="left")
+    for source in ["住院", "门诊", "体检"]:
+        if source not in fallback_review:
+            fallback_review[source] = 0
+    fallback_review["historical_occurrences"] = fallback_review[["住院", "门诊", "体检"]].sum(axis=1)
+    fallback_review["source_coverage"] = fallback_review.apply(
+        lambda row: "|".join(source for source in ["住院", "门诊", "体检"] if row[source] > 0), axis=1
+    )
+    fallback_review.to_csv(
+        CAPABILITY_RESULTS / "CURRENT_UNMATCHED_PROJECT_REVIEW.csv", index=False, encoding="utf-8-sig"
+    )
+    # Retain this compatibility filename for downstream readers; the explicit
+    # legacy 50-row ledger is produced by build_legacy_fallback_audit.py.
+    fallback_review.to_csv(
+        CAPABILITY_RESULTS / "FALLBACK_PROJECT_REVIEW.csv", index=False, encoding="utf-8-sig"
+    )
+    bedside_audit = (
+        items[items["item_bedside"]]
+        .merge(source_lookup, on="event_id", how="left")
+        .groupby(
+            ["project_norm", "category", "source", "evidence_level", "project_compatible_rooms", "bedside_compatible_rooms"],
+            dropna=False,
+            as_index=False,
+        )
+        .size()
+        .rename(columns={"size": "item_count"})
+    )
+    bedside_audit["machine7_has_project_evidence"] = bedside_audit["bedside_compatible_rooms"].eq("7")
+    bedside_audit["semantic_status"] = np.where(
+        bedside_audit["machine7_has_project_evidence"], "confirmed_project_and_bedside", "bedside_without_specialty_excluded"
+    )
+    bedside_audit.to_csv(
+        CAPABILITY_RESULTS / "bedside_project_capability_audit.csv", index=False, encoding="utf-8-sig"
     )
     slot_capacity.to_csv(
         args.output_dir / "doctor_slot_capacity.csv", index=False, encoding="utf-8-sig"
@@ -659,15 +803,22 @@ def main() -> None:
     item_levels = items.merge(event_source, on="event_id", how="left")
     diagnostics["capability"] = {
         "unique_projects": int(project_summary["project_norm"].nunique()),
-        "projects_with_strict_match": int(project_summary["strict_room_count"].gt(0).sum()),
-        "projects_using_category_fallback": int(project_summary["strict_room_count"].eq(0).sum()),
-        "item_share_strict_or_bedside": float(
-            item_levels["capability_level"].ne("category_fallback").mean()
-        ),
-        "fallback_item_share_by_source": {
-            source: float(group["capability_level"].eq("category_fallback").mean())
+        "projects_by_evidence_level": {
+            level: int(count)
+            for level, count in project_summary["evidence_level"].value_counts().items()
+        },
+        "projects_excluded_level_D": int(project_summary["evidence_level"].eq("D").sum()),
+        "blanket_category_fallback_used": False,
+        "schedulable_item_share": float(item_levels["compatible_rooms"].fillna("").ne("").mean()),
+        "level_D_item_share_by_source": {
+            source: float(group["capability_level"].eq("D").mean())
             for source, group in item_levels.groupby("source")
         },
+        "reviewed_former_fallback_project_count": int(len(fallback_review)),
+        "bedside_item_count": int(items["item_bedside"].sum()),
+        "bedside_item_machine7_semantic_coverage": float(
+            items.loc[items["item_bedside"], "bedside_compatible_rooms"].eq("7").mean()
+        ),
     }
     diagnostics["doctor_capacity"] = {
         "method": "weekday-by-5-minute median of training-day active session proxy",
