@@ -1,0 +1,92 @@
+{
+  "period": {
+    "start": "2019-03-01",
+    "end": "2025-03-31"
+  },
+  "source_rows_after_period_and_key_filter": 746878,
+  "observable_key_definitions": {
+    "patient_time": [
+      "patient_id",
+      "order_dt"
+    ],
+    "patient_time_department": [
+      "patient_id",
+      "order_dt",
+      "department_id"
+    ],
+    "patient_time_doctor_department": [
+      "patient_id",
+      "order_dt",
+      "order_doctor_id",
+      "department_id"
+    ]
+  },
+  "policies": {
+    "keep_exact_duplicates": {
+      "rows": 746878,
+      "groupings": {
+        "patient_time": {
+          "episode_count": 368774,
+          "complete_48h_count": 320938,
+          "completion_rate": 0.8702836967899038,
+          "multi_project_episode_count": 196839,
+          "multi_project_episode_rate": 0.5337659379457337,
+          "max_project_rows": 15,
+          "episodes_over_five_rows": 6119
+        },
+        "patient_time_department": {
+          "episode_count": 368775,
+          "complete_48h_count": 320939,
+          "completion_rate": 0.8702840485390821,
+          "multi_project_episode_count": 196838,
+          "multi_project_episode_rate": 0.53376177886245,
+          "max_project_rows": 15,
+          "episodes_over_five_rows": 6119
+        },
+        "patient_time_doctor_department": {
+          "episode_count": 368779,
+          "complete_48h_count": 320943,
+          "completion_rate": 0.8702854555167187,
+          "multi_project_episode_count": 196837,
+          "multi_project_episode_rate": 0.5337532777083294,
+          "max_project_rows": 15,
+          "episodes_over_five_rows": 6119
+        }
+      }
+    },
+    "drop_exact_duplicates": {
+      "rows": 746310,
+      "groupings": {
+        "patient_time": {
+          "episode_count": 368774,
+          "complete_48h_count": 320938,
+          "completion_rate": 0.8702836967899038,
+          "multi_project_episode_count": 196674,
+          "multi_project_episode_rate": 0.5333185094393856,
+          "max_project_rows": 15,
+          "episodes_over_five_rows": 6093
+        },
+        "patient_time_department": {
+          "episode_count": 368775,
+          "complete_48h_count": 320939,
+          "completion_rate": 0.8702840485390821,
+          "multi_project_episode_count": 196673,
+          "multi_project_episode_rate": 0.5333143515693851,
+          "max_project_rows": 15,
+          "episodes_over_five_rows": 6093
+        },
+        "patient_time_doctor_department": {
+          "episode_count": 368779,
+          "complete_48h_count": 320943,
+          "completion_rate": 0.8702854555167187,
+          "multi_project_episode_count": 196672,
+          "multi_project_episode_rate": 0.5333058552683314,
+          "max_project_rows": 15,
+          "episodes_over_five_rows": 6093
+        }
+      }
+    }
+  },
+  "patient_time_groups_split_by_strict_key": 5,
+  "patient_time_groups_total": 368774
+}

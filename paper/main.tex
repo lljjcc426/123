@@ -1,0 +1,140 @@
+%!TEX program = xelatex
+\documentclass[UTF8,a4paper,zihao=-4,fontset=windows]{ctexart}
+
+\usepackage[top=2.5cm,bottom=2.5cm,left=2.5cm,right=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,bm,mathtools}
+\usepackage{booktabs,longtable,tabularx,array,multirow,makecell,threeparttable}
+\usepackage{graphicx,subcaption,float,placeins}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{etoolbox}
+\usepackage{lastpage}
+
+\setmainfont{Times New Roman}
+\setmonofont{Cascadia Mono}
+\setCJKmainfont[AutoFakeBold=2]{SimSun}
+\setCJKsansfont[AutoFakeBold=2]{SimHei}
+
+\definecolor{ink}{HTML}{20242A}
+\definecolor{accent}{HTML}{276FBF}
+\definecolor{muted}{HTML}{5F6B76}
+\definecolor{linegray}{HTML}{B7C0C7}
+\definecolor{codebg}{HTML}{F6F8FA}
+
+\ctexset{
+  section={format=\centering\heiti\zihao{4}\bfseries,beforeskip=12pt,afterskip=8pt},
+  subsection={format=\heiti\zihao{-4}\bfseries,beforeskip=9pt,afterskip=4pt},
+  subsubsection={format=\songti\zihao{-4}\bfseries,beforeskip=7pt,afterskip=3pt}
+}
+
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0pt}
+\setlength{\footskip}{1.15cm}
+\setlength{\emergencystretch}{2em}
+\singlespacing
+\setlist{nosep,leftmargin=2em}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\tabcolsep}{4.5pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\cfoot{\zihao{5}\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\DeclareCaptionFont{wuhao}{\zihao{5}\songti\color{black}}
+\captionsetup{font=wuhao,labelfont=wuhao,labelsep=quad,justification=centering}
+\captionsetup[figure]{position=bottom,skip=5pt}
+\captionsetup[table]{position=top,skip=5pt}
+\AtBeginEnvironment{tabular}{\zihao{5}\songti}
+\AtBeginEnvironment{tabularx}{\zihao{5}\songti}
+\AtBeginEnvironment{longtable}{\zihao{5}\songti}
+\graphicspath{{../supporting_materials/figures/paper_final/}}
+
+\newcommand{\unit}[1]{\,\mathrm{#1}}
+\newcommand{\R}{\mathcal{R}}
+\newcommand{\T}{\mathcal{T}}
+\newcommand{\I}{\mathcal{I}}
+\newcommand{\J}{\mathcal{J}}
+\newcommand{\D}{\mathcal{D}}
+\newcommand{\Ecal}{\mathcal{E}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\indicator}{\mathbb{I}}
+
+\lstdefinestyle{paperpython}{
+  language=Python,
+  basicstyle=\ttfamily\zihao{-5},
+  keywordstyle=\color{accent},
+  commentstyle=\color{muted},
+  stringstyle=\color{ink},
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{linegray},
+  numbers=left,
+  numberstyle=\tiny\color{muted},
+  breaklines=true,
+  breakatwhitespace=false,
+  showstringspaces=false,
+  tabsize=4,
+  columns=fullflexible,
+  keepspaces=true,
+  literate={Ⅰ}{{I}}1 {Ⅱ}{{II}}2 {Ⅲ}{{III}}3 {Ⅳ}{{IV}}2
+}
+
+\hypersetup{hidelinks,pdftitle={共享设备与医生约束下的超声预约联合优化},pdfauthor={},pdfsubject={数学建模竞赛论文},pdflang={zh-CN}}
+
+\makeatletter
+\patchcmd{\thebibliography}{\section*{\refname}}{}{}{}
+\makeatother
+
+\begin{document}
+\songti\zihao{-4}\color{ink}
+\pagenumbering{arabic}
+
+\begin{center}
+  \vspace*{0.10cm}
+  {\heiti\zihao{3}\bfseries 共享设备与医生约束下的超声预约联合优化}\par
+  \vspace{14pt}
+  {\heiti\zihao{4}\bfseries 摘\quad 要}
+\end{center}
+
+超声预约不是单机排队问题：同一患者可能包含多个检查项目，项目对设备能力存在选择限制，检查过程还同时占用医生；空腹、憋尿、床旁检查和跨室转运又改变了可用时间窗。针对这些特点，本文以题目给出的住院、门诊、体检记录及22台设备资料为基础，建立“参数标定—统一任务表示—连续日历排程—留出期评价”的患者级联合模型。模型参数只由2019年3月1日至2024年3月31日训练期估计，2024年4月1日至2025年3月31日仅用于时间顺序检验；由于住院事件的最大截止期为48小时，只在留出边界前加2日预热，用于携入真正可跨边界的在制任务。
+
+对于问题一，先以“患者编号+精确开单时刻”构造申请事件，去除打印、预约等非扫查项目，并按互斥优先级将服务项目归入11类。题目没有扫查起止时刻，故不把报告间隔解释为实测检查时长，而以题给时长区间的中点作为名义值、上界作为复杂病例值；单项目相邻报告间隔和医生日吞吐仅用于形成相对修正。训练期得到297\,656个住院、245\,614个门诊和239\,569个体检事件，形成42\,336个医生—项目完整调度时长估计，其中6\,416个组合具有直接间隔证据。设备能力以表1项目文本为直接证据来源，建立项目级严格匹配、类别回退和床旁明确三层证据；22台设备中床旁检查仅7号机可承担，是确定性唯一瓶颈。医生容量则由表6训练日首末活动时段重构为星期—5分钟槽并发上限，主情景为5至20人，而非把每日医生总数复制到每个机房。
+
+对于问题二，将每位住院患者的全部服务项目作为一个不可拆分完成目标，在5分钟离散连续日历上同时决定患者顺序、项目内部顺序、开始时刻与机房。模型约束包括设备互斥、医生共享并发、项目—设备兼容、患者自身不重叠、48小时截止、空腹10时前完成、憋尿准备、床旁7号机、同室优先及跨室至少10分钟转运。采用“共同机房优先—多候选项目序列—最早可行时隙”的构造算法，并分别比较共享先到先服务、最小松弛度保护和联合稀缺度策略。
+
+对于问题三，把门诊和体检的历史报告日期作为回顾性计划日压力场景，不读取历史报告时刻、机房和医生派单；释放时刻不早于真实开单，三类患者在同一个年度日历中竞争相同房间与医生容量。主情景将留出期中按整数事件最接近5\%的8\,341个事件设为复杂病例，其项目采用时长上界。留出期共有70\,771个住院事件和96\,046个门诊/体检事件。题目未给出“满足门诊、体检需求”的数值阈值，故以共享FCFS的计划日服务率作为不劣基线，再按住院48小时率选择主方案。资源可行FCFS完成45\,260个住院事件，48小时率63.95\%，并完成57\,341个门诊/体检计划日事件，完成率59.70\%；联合稀缺度把背景率提高到61.61\%，却使住院率降至63.31\%，因此只作为帕累托备选。独立程序重构151\,020条排程任务，对房间重叠、医生超容量、患者冲突、兼容、转运、准备约束、时长和结果聚合等18项检查，违规数均为0。敏感性分析表明，医生容量降至训练日下四分位时住院率下降1.99个百分点；仅保留严格设备证据会使背景完成率下降10.03个百分点，说明上线前必须由超声科确认回退项目清单。
+
+本文最终给出可直接执行的患者—项目—时段—机房推荐表。由于数据缺少真实预约时刻、扫查结束、报告提交时刻、未来医生身份和项目资质矩阵，本文把“排程中最后一个项目结束”作为报告完成代理，结果应理解为预约决策方案与能力压力评估，而不是对临床报告时效的因果结论。
+
+\vspace{7pt}
+\noindent\textbf{关键词：}超声预约；患者级排程；共享资源；48小时完成率；设备兼容；敏感性分析
+
+\clearpage
+\input{sections/01_problem}
+\input{sections/02_analysis}
+\input{sections/03_assumptions}
+\input{sections/04_symbols}
+\section{模型的建立与求解}
+
+三个子问共用同一个患者事件、项目任务、设备能力和医生时隙容量内核。问题一估计需求与资源参数；问题二建立住院患者级排程；问题三只在共享日历中加入门诊和体检计划日约束，不另造一套不相容的容量模型。全年整数模型的变量规模过大，因而本文用整数规划明确数学可行域，用共享同一约束的确定性构造算法完成全年求解。
+\input{sections/05_p1}
+\input{sections/05_p2}
+\input{sections/05_p3_to_08}
+\label{body:lastpage}
+
+\clearpage
+\input{sections/09_references}
+
+\clearpage
+\appendix
+\input{sections/appendix}
+
+\end{document}

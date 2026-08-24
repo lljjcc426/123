@@ -1,0 +1,49 @@
+{
+  "events": {
+    "住院": 71029,
+    "门诊": 55512,
+    "体检": 40820
+  },
+  "items": {
+    "住院": 141429,
+    "体检": 117701,
+    "门诊": 69756
+  },
+  "special_case_count": 8368,
+  "special_case_share": 0.04999970124461493,
+  "background_scenario_basis": "report date defines the retrospective plan day; release is no earlier than observed order time; report time, room and doctor are excluded",
+  "bladder_preparation_minutes": 60,
+  "bladder_readiness_rule": "max(plan-day start, order time plus preparation) for background; order time plus preparation for inpatient",
+  "capability": {
+    "unique_projects": 210,
+    "projects_with_strict_match": 160,
+    "projects_using_category_fallback": 50,
+    "item_share_strict_or_bedside": 0.8640836034370573,
+    "fallback_item_share_by_source": {
+      "住院": 0.0183484292471841,
+      "体检": 0.30554540743069303,
+      "门诊": 0.08806410918057228
+    }
+  },
+  "doctor_capacity": {
+    "method": "weekday-by-5-minute median of training-day active session proxy",
+    "session_reconstruction": "first activity at 07:00-09:00 snaps to 08:00; 12:30-14:00 snaps to 13:00; last activity at 11:00-12:30 snaps to 12:00 and 16:00-19:00 snaps to 17:00; otherwise retain observed interval with a 10-minute start expansion",
+    "room_cap": 22,
+    "current_doctor_count_from_problem": 33,
+    "main_capacity_min": 5,
+    "main_capacity_max": 20
+  },
+  "time_scope": {
+    "training_start": "2019-03-01",
+    "training_end_exclusive": "2024-04-01",
+    "holdout_start": "2024-04-01",
+    "holdout_end_exclusive": "2025-04-01",
+    "simulation_start": "2024-03-30",
+    "warmup_days": 2
+  },
+  "room_scarcity_boundary": {
+    "source": "2019-03-01 to 2024-03-31 frozen training project catalog",
+    "holdout_project_mix_used": false,
+    "measure": "record_count times nominal_minutes divided equally across compatible rooms"
+  }
+}

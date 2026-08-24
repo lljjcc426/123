@@ -1,0 +1,73 @@
+{
+  "date_range": [
+    "2019-03-01",
+    "2024-03-31"
+  ],
+  "event_proxy": "source + patient_id + exact order datetime",
+  "department_attribution": "department on the first source-ordered service project row",
+  "sources": {
+    "住院": {
+      "official_rows": 595872,
+      "service_rows": 579716,
+      "service_events": 297656,
+      "known_department_count": 87,
+      "missing_department_events": 13,
+      "mixed_department_events": 1
+    },
+    "门诊": {
+      "official_rows": 306825,
+      "service_rows": 306669,
+      "service_events": 245614,
+      "known_department_count": 133,
+      "missing_department_events": 26,
+      "mixed_department_events": 65
+    },
+    "体检": {
+      "official_rows": 564101,
+      "service_rows": 564101,
+      "service_events": 239569,
+      "known_department_count": 1,
+      "missing_department_events": 0,
+      "mixed_department_events": 0
+    }
+  },
+  "boundary": {
+    "authoritative_training_end": "2024-03-31",
+    "full_audit_end": "2025-03-31",
+    "holdout_used_for_configuration": false
+  },
+  "full_period_audit": {
+    "date_range": [
+      "2019-03-01",
+      "2025-03-31"
+    ],
+    "event_proxy": "source + patient_id + exact order datetime",
+    "department_attribution": "department on the first source-ordered service project row",
+    "sources": {
+      "住院": {
+        "official_rows": 746878,
+        "service_rows": 721149,
+        "service_events": 368427,
+        "known_department_count": 88,
+        "missing_department_events": 13,
+        "mixed_department_events": 1
+      },
+      "门诊": {
+        "official_rows": 376014,
+        "service_rows": 375838,
+        "service_events": 300446,
+        "known_department_count": 139,
+        "missing_department_events": 26,
+        "mixed_department_events": 65
+      },
+      "体检": {
+        "official_rows": 675958,
+        "service_rows": 675958,
+        "service_events": 278670,
+        "known_department_count": 1,
+        "missing_department_events": 0,
+        "mixed_department_events": 0
+      }
+    }
+  }
+}

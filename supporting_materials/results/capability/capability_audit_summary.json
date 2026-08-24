@@ -1,0 +1,96 @@
+{
+  "authority_inputs": [
+    "F:\\c题：超声预约优化问题\\c题：超声预约优化问题\\supporting_materials\\processed_data\\raw_parquet\\equipment_capability.parquet",
+    "F:\\c题：超声预约优化问题\\c题：超声预约优化问题\\supporting_materials\\results\\p1\\category_rules.csv"
+  ],
+  "historical_completion_records_used": false,
+  "machine_count": 22,
+  "service_family_count": 11,
+  "matrix_one_count": 110,
+  "evidence_token_count": 551,
+  "matrix_one_evidence_row_count": 550,
+  "broad_descriptor_count": 1,
+  "all_independent_checks_passed": true,
+  "failed_check_ids": [],
+  "special_resource_checks": [
+    {
+      "resource": "床旁",
+      "mapped_category": "独立床旁约束",
+      "feasible_room_count": 1,
+      "feasible_machine_ids": "7",
+      "feasible_rooms": "床边B超",
+      "zero_feasible": false,
+      "unique_bottleneck": true,
+      "status": "唯一瓶颈",
+      "evidence_basis": "表1诊室名含床边/床旁，或检查项目原文含床旁"
+    },
+    {
+      "resource": "心脏",
+      "mapped_category": "心脏",
+      "feasible_room_count": 5,
+      "feasible_machine_ids": "73|113|48|45|49",
+      "feasible_rooms": "病4|门5|门6|门7|门11",
+      "zero_feasible": false,
+      "unique_bottleneck": false,
+      "status": "多房间",
+      "evidence_basis": "22×11矩阵中“心脏”=1，且每个1有表1项目原文证据"
+    },
+    {
+      "resource": "血管",
+      "mapped_category": "血管",
+      "feasible_room_count": 12,
+      "feasible_machine_ids": "40|69|72|71|41|42|46|47|44|74|75|77",
+      "feasible_rooms": "门1|病1|病3|病2|门2|门3|门8|门9|门10|妇门1|妇门2|妇门3",
+      "zero_feasible": false,
+      "unique_bottleneck": false,
+      "status": "多房间",
+      "evidence_basis": "22×11矩阵中“血管”=1，且每个1有表1项目原文证据"
+    },
+    {
+      "resource": "III/IV产科",
+      "mapped_category": "产科III/IV级",
+      "feasible_room_count": 3,
+      "feasible_machine_ids": "64|43|65",
+      "feasible_rooms": "门12|门13|门16",
+      "zero_feasible": false,
+      "unique_bottleneck": false,
+      "status": "少数房间",
+      "evidence_basis": "22×11矩阵中“产科III/IV级”=1，且每个1有表1项目原文证据"
+    },
+    {
+      "resource": "I/II产科",
+      "mapped_category": "产科I/II级",
+      "feasible_room_count": 13,
+      "feasible_machine_ids": "40|41|42|46|47|44|64|43|65|160|74|75|77",
+      "feasible_rooms": "门1|门2|门3|门8|门9|门10|门12|门13|门16|门17|妇门1|妇门2|妇门3",
+      "zero_feasible": false,
+      "unique_bottleneck": false,
+      "status": "多房间",
+      "evidence_basis": "22×11矩阵中“产科I/II级”=1，且每个1有表1项目原文证据"
+    },
+    {
+      "resource": "儿科专项",
+      "mapped_category": "儿科专项",
+      "feasible_room_count": 2,
+      "feasible_machine_ids": "45|44",
+      "feasible_rooms": "门7|门10",
+      "zero_feasible": false,
+      "unique_bottleneck": false,
+      "status": "少数房间",
+      "evidence_basis": "22×11矩阵中“儿科专项”=1，且每个1有表1项目原文证据"
+    },
+    {
+      "resource": "介入/定位",
+      "mapped_category": "介入/定位",
+      "feasible_room_count": 15,
+      "feasible_machine_ids": "40|69|72|41|42|46|47|44|64|43|65|160|74|75|77",
+      "feasible_rooms": "门1|病1|病3|门2|门3|门8|门9|门10|门12|门13|门16|门17|妇门1|妇门2|妇门3",
+      "zero_feasible": false,
+      "unique_bottleneck": false,
+      "status": "多房间",
+      "evidence_basis": "22×11矩阵中“介入/定位”=1，且每个1有表1项目原文证据"
+    }
+  ],
+  "matrix_semantics": "1 means Table 1 lists at least one concrete, non-broad project in the family; it does not guarantee every project in the family.",
+  "broad_descriptor_policy": "Broad-only evidence is retained but produces family capability 0; an explicit bedside phrase can independently establish only the bedside location constraint."
+}
