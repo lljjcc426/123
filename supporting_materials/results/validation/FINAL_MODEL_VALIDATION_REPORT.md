@@ -1,15 +1,17 @@
 # FINAL_MODEL_VALIDATION_REPORT
 
-## Level 1 Raw-data semantic audit
+## 输入语义
 
-原始时间范围、字段、事件键、重复记录和报告延迟由 `tables/audit/data_audit_metrics.json` 与 `bundle_key_sensitivity.json` 核查。
+`input_semantics_passed = True`。
 
-## Level 2 Model-input semantic audit
+## P2 排程可行性
 
-输入语义验证结果：通过。设备能力、50项复核、床旁交集、训练/留出边界、医生资质边界和报告代理见 `input_semantic_verification.json`。
+`p2_schedule_verification_passed = True`。独立验证器必须包含按 `patient_id` 跨全部 event 的互斥检查和相邻异室转运检查；旧版仅 event 内检查的 JSON 不满足冻结条件。
 
-## Level 3 Schedule feasibility audit
+## P3 排程可行性
 
-P2独立检查：通过；P3独立检查：通过。检查覆盖任务唯一性、时长、项目房间兼容、床旁、释放/截止、工作时段、空腹、憋尿准备、设备互斥、患者互斥、跨室转运、医生并发和结果聚合。
+`p3_schedule_verification_passed = True`。P3 还必须同时通过全年 ε 语义、无逐日 quota、精确小窗口和 alpha=0 内核等价检查。
 
-最终结论：三层均通过。
+## 最终状态
+
+`MODEL_AND_RESULTS_FROZEN = TRUE`。未通过项：无。

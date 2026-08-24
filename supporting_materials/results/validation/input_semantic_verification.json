@@ -24,12 +24,17 @@
     "all_former_fallback_projects_reviewed": {
       "passed": true,
       "violation_count": 0,
-      "detail": "review_rows=50"
+      "detail": "review_rows=50; duplicate_legacy_projects=0"
     },
     "review_has_explicit_treatment": {
       "passed": true,
       "violation_count": 0,
       "detail": "每个原回退项目都有最终处理"
+    },
+    "legacy_category_fallback_removed": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": "旧版50个项目均不得保留整类设备兜底"
     },
     "event_keys_unique": {
       "passed": true,

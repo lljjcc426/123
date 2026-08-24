@@ -1,0 +1,29 @@
+{
+  "alpha": 0.2,
+  "formal_constraint": "background_completed_events >= ceil(alpha * background_total_events)",
+  "background_total_events": 96046,
+  "background_required_events": 19210,
+  "repair_triggered": false,
+  "daily_quota_used": false,
+  "candidates": [
+    {
+      "formal_constraint_scope": "entire evaluation year",
+      "daily_quota_used": false,
+      "required_background_events": 19210,
+      "reserved_background_events_before_inpatient": 0,
+      "background_attempts_before_inpatient": 0,
+      "reservation_target_met": false,
+      "construction_method": "inpatient_first",
+      "background_order_strategy": "scarcity",
+      "background_completed_events": 38872,
+      "background_deficit_events": 0,
+      "epsilon_constraint_satisfied": true,
+      "inpatient_completed_events": 60368,
+      "inpatient_wait_p50_hours": 3.5833333333333335,
+      "inpatient_wait_p90_hours": 22.083333333333332,
+      "inpatient_room_switch_rate": 0.5816490392602026,
+      "scheduled_minutes": 2005045.0,
+      "selected": true
+    }
+  ]
+}

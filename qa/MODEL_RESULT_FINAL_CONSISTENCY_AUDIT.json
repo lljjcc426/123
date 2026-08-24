@@ -1,0 +1,481 @@
+{
+  "generated_at": "2026-08-25T05:03:47+08:00",
+  "passed": true,
+  "checks": [
+    {
+      "id": "I01",
+      "requirement": "最终论文所依赖的权威结果文件齐备",
+      "passed": true,
+      "paper_evidence": "论文引用P1、P2、P3、精确对照、校准、敏感性和稳健性结果",
+      "result_evidence": "缺失=[]",
+      "source_files": [
+        "supporting_materials/results/p1/peak_flat_summary.csv",
+        "supporting_materials/results/p1/chronological_validation.csv",
+        "supporting_materials/results/p1/department_demand_overview_train.csv",
+        "supporting_materials/results/p1/multiproject_coefficient_sensitivity.csv",
+        "supporting_materials/results/p1/monthly_trends.csv",
+        "supporting_materials/results/p1/daily_trends.csv",
+        "supporting_materials/results/p1/annual_trends.csv",
+        "supporting_materials/results/p1/analysis_summary.json",
+        "supporting_materials/results/p1/report_gap_proxy_by_category.csv",
+        "supporting_materials/results/p1/service_duration_parameters.csv",
+        "supporting_materials/processed_data/unified_holdout/summary.json",
+        "supporting_materials/processed_data/unified_holdout/events.csv",
+        "supporting_materials/processed_data/unified_holdout/items.csv",
+        "supporting_materials/processed_data/unified_holdout/doctor_slot_capacity.csv",
+        "supporting_materials/processed_data/unified_holdout/project_machine_summary.csv",
+        "supporting_materials/results/final_frozen/p2_inpatient_only/summary.json",
+        "supporting_materials/results/final_frozen/p2_inpatient_only/policy_metrics.csv",
+        "supporting_materials/results/capability/P2_CAPABILITY_FAILURE_DECOMPOSITION.csv",
+        "supporting_materials/results/final_frozen/p2_inpatient_only/room_utilization_daily.csv",
+        "supporting_materials/results/final_frozen/p2_inpatient_only/inpatient_recommended_schedule.csv",
+        "supporting_materials/results/final_frozen/p3_joint/selection.json",
+        "supporting_materials/results/final_frozen/p3_joint/pareto_metrics.csv",
+        "supporting_materials/results/final_frozen/p3_joint/daily_service_metrics.csv",
+        "supporting_materials/results/final_frozen/p3_joint/final_patient_task_schedule.csv",
+        "supporting_materials/results/exact_benchmark/exact_vs_heuristic_metrics.csv",
+        "supporting_materials/results/p3_exact_benchmark/p3_exact_vs_heuristic_metrics.csv",
+        "supporting_materials/results/p3_exact_benchmark/p3_repair_path_audit.json",
+        "supporting_materials/results/final_frozen/p2_inpatient_only/independent_verification.json",
+        "supporting_materials/results/final_frozen/p3_joint/independent_verification.json",
+        "supporting_materials/results/calibration/calibration_metrics.csv",
+        "supporting_materials/results/final_frozen/sensitivity_metrics.csv",
+        "supporting_materials/results/final_frozen/preparation_granularity_sensitivity.csv",
+        "supporting_materials/results/final_frozen/special_seed_summary.json"
+      ]
+    },
+    {
+      "id": "P101",
+      "requirement": "问题一阈值与四类留出WAPE来自最新P1结果",
+      "passed": true,
+      "paper_evidence": "缺失格式组=[]",
+      "result_evidence": "peak=412.0/671.0/797.1499999999999；WAPE={'住院': 0.16039055545350497, '门诊': 0.14044718412605778, '体检': 0.6983248496535325, '三类合计': 0.24921616861118934}",
+      "source_files": [
+        "supporting_materials/results/p1/peak_flat_summary.csv",
+        "supporting_materials/results/p1/chronological_validation.csv"
+      ]
+    },
+    {
+      "id": "P102",
+      "requirement": "问题一预测比较表逐来源匹配三种留出WAPE",
+      "passed": true,
+      "paper_evidence": "表行数=4；不匹配来源=[]",
+      "result_evidence": "开单日结果行数=12",
+      "source_files": [
+        "supporting_materials/results/p1/chronological_validation.csv",
+        "paper/tables/forecast_comparison.tex"
+      ]
+    },
+    {
+      "id": "P103",
+      "requirement": "问题一科室与多项目结构表匹配训练期及全期结果",
+      "passed": true,
+      "paper_evidence": "表行数=3；不匹配来源=[]",
+      "result_evidence": "科室列取训练期，多项目列取全观察期开单事件",
+      "source_files": [
+        "supporting_materials/results/p1/department_demand_overview_train.csv",
+        "supporting_materials/results/p1/multiproject_coefficient_sensitivity.csv",
+        "paper/tables/p1_structure.tex"
+      ]
+    },
+    {
+      "id": "P104",
+      "requirement": "问题一数据规模、设备能力分类与医生容量正文匹配统一输入",
+      "passed": true,
+      "paper_evidence": "数据缺失=[]；能力缺失=[]；容量缺失=[]",
+      "result_evidence": "事件/任务=167361/328950；预热/背景=258/96046；能力={'C': 92, 'B': 60, 'A': 44, 'D': 15}；容量=5--20",
+      "source_files": [
+        "supporting_materials/processed_data/unified_holdout/summary.json",
+        "supporting_materials/results/final_frozen/p3_joint/selection.json"
+      ]
+    },
+    {
+      "id": "P105",
+      "requirement": "问题一年度住院需求与峰平阈值正文匹配训练期结果",
+      "passed": true,
+      "paper_evidence": "年度行=5；缺失格式组=[]",
+      "result_evidence": "年度均值=['146.12295081967213', '161.47397260273974', '170.47123287671232', '178.01643835616437', '194.4398907103825']；峰平行={'source': '三类合计', 'basis': '开单日', 'period': '2019-03-01至2024-03-31', 'threshold_data_role': 'training_only', 'q45': '388.65', 'median_flat_level': '412.0', 'q55': '434.0', 'q90_peak_threshold': '671.0', 'q95_stress_threshold': '797.1499999999999', 'representative_peak_date': '2019-11-06', 'representative_peak_count': '671', 'representative_flat_date': '2022-03-02', 'representative_flat_count': '412', 'peak_weekday': '周一', 'peak_weekday_median': '523.0', 'peak_calendar_month': '9', 'peak_month_daily_median': '493.5', 'holdout_peak_day_share': '0.13150684931506848', 'holdout_stress_day_share': '0.07945205479452055', 'holdout_flat_day_share': '0.09315068493150686'}",
+      "source_files": [
+        "supporting_materials/results/p1/annual_trends.csv",
+        "supporting_materials/results/p1/peak_flat_summary.csv"
+      ]
+    },
+    {
+      "id": "P106",
+      "requirement": "问题一多项目敏感性与报告间隔代理正文匹配分析结果",
+      "passed": true,
+      "paper_evidence": "多项目缺失=[]；代理缺失=[]",
+      "result_evidence": "住院多项目均值=['17.392678875326727', '16.111032850469698', '14.829386825612673']；代理样本=510957；产科III/IV中位数=21.0",
+      "source_files": [
+        "supporting_materials/results/p1/analysis_summary.json",
+        "supporting_materials/results/p1/multiproject_coefficient_sensitivity.csv",
+        "supporting_materials/results/p1/report_gap_proxy_by_category.csv"
+      ]
+    },
+    {
+      "id": "P201",
+      "requirement": "问题二摘要与正文关键指标匹配最终summary",
+      "passed": true,
+      "paper_evidence": "缺失格式组=[]；推荐策略写入正文=True",
+      "result_evidence": "selected_policy=FCFS_LOAD_BALANCED；metrics={'scenario': 'P2_INPATIENT_ONLY', 'policy': 'FCFS_LOAD_BALANCED', 'inpatient_events': 70771, 'inpatient_complete_48h': 60368, 'inpatient_48h_rate': 0.8530047618374758, 'inpatient_scheduled_complete': 60368, 'inpatient_unscheduled': 10403, 'inpatient_wait_p50_hours_conditional': 3.583333333333333, 'inpatient_wait_p90_hours_conditional': 22.08333333333333, 'inpatient_wait_p95_hours_conditional': 23.666666666666668, 'inpatient_room_switch_rate_multi': 0.5816490392602026, 'background_events': 0, 'background_on_planned_day': 0, 'background_on_time_rate': nan, 'background_scheduled_complete': 0, 'fallback_scheduled_task_share': 0.0, 'scheduled_minutes': 1344765.0, 'staffed_capacity_utilization': 0.5453057997019556, 'transfer_minutes_assumption': 10}",
+      "source_files": [
+        "supporting_materials/results/final_frozen/p2_inpatient_only/summary.json"
+      ]
+    },
+    {
+      "id": "P202",
+      "requirement": "问题二六策略表逐行匹配policy_metrics",
+      "passed": true,
+      "paper_evidence": "表行数=6；缺失策略=[]",
+      "result_evidence": "CSV行数=6",
+      "source_files": [
+        "supporting_materials/results/final_frozen/p2_inpatient_only/policy_metrics.csv",
+        "paper/tables/p2_policy.tex"
+      ]
+    },
+    {
+      "id": "P203",
+      "requirement": "问题二未完成主因表只使用评价期分母并匹配A至F能力分解",
+      "passed": true,
+      "paper_evidence": "表行数=3；不匹配=[]；正文缺失非零A--F类别=[]",
+      "result_evidence": "未完成=10403；能力失败=10258；其余=145；A--F=[('A', '222'), ('B', '10036'), ('C', '0'), ('D', '0'), ('E', '0'), ('F', '0')]",
+      "source_files": [
+        "supporting_materials/results/final_frozen/p2_inpatient_only/summary.json",
+        "supporting_materials/results/capability/P2_CAPABILITY_FAILURE_DECOMPOSITION.csv",
+        "paper/tables/p2_failure.tex"
+      ]
+    },
+    {
+      "id": "P204",
+      "requirement": "问题二高负荷诊室表匹配最终排程的前六个诊室",
+      "passed": true,
+      "paper_evidence": "表行数=6；不匹配诊室=[]",
+      "result_evidence": "最终排程诊室数=22",
+      "source_files": [
+        "supporting_materials/results/final_frozen/p2_inpatient_only/room_utilization_daily.csv",
+        "paper/tables/p2_room_load.tex"
+      ]
+    },
+    {
+      "id": "P301",
+      "requirement": "问题三摘要与正文推荐点指标匹配最终selection",
+      "passed": true,
+      "paper_evidence": "缺失格式组=[]",
+      "result_evidence": "selected_alpha=0.45；selected_metrics={'scenario': 'P3_ALPHA_0.45', 'policy': 'FCFS_LOAD_BALANCED', 'inpatient_events': 70771, 'inpatient_complete_48h': 45861, 'inpatient_48h_rate': 0.6480196690734905, 'inpatient_scheduled_complete': 45861, 'inpatient_unscheduled': 24910, 'inpatient_wait_p50_hours_conditional': 3.9166666666666665, 'inpatient_wait_p90_hours_conditional': 21.83333333333333, 'inpatient_wait_p95_hours_conditional': 25.58333333333333, 'inpatient_room_switch_rate_multi': 0.3063292541115233, 'background_events': 96046, 'background_on_planned_day': 54137, 'background_on_time_rate': 0.5636569976886076, 'background_scheduled_complete': 54137, 'fallback_scheduled_task_share': 0.0, 'scheduled_minutes': 1897045.0, 'staffed_capacity_utilization': 0.7692568149792687, 'background_target_alpha': 0.45, 'background_total_events': 96046, 'background_required_events': 43221, 'background_completed_events': 54137, 'background_deficit_events': 0, 'epsilon_constraint_satisfied': True, 'construction_method': 'global_deficit_repair', 'background_order_strategy': 'fcfs', 'daily_quota_used': False, 'repair_triggered': True, 'p2_room_mode': 'current_load', 'alpha_zero_p2_complete_match': None, 'preparation_granularity': 'item', 'special_seed': 20260824, 'capability_mode': 'hierarchical', 'capacity_column': 'capacity_main', 'bladder_minutes': 60, 'transfer_minutes': 10, 'detail_saved': True, 'epsilon_feasible': True, 'pareto_nondominated': True, 'distance_to_ideal': 0.8110114512450477}",
+      "source_files": [
+        "supporting_materials/results/final_frozen/p3_joint/selection.json"
+      ]
+    },
+    {
+      "id": "P302",
+      "requirement": "问题三论文与结果均采用全期epsilon约束且不使用逐日配额",
+      "passed": true,
+      "paper_evidence": "正文含全评价期约束与不设置逐日配额",
+      "result_evidence": "daily_quota_used=False；epsilon_constraint_satisfied=True",
+      "source_files": [
+        "supporting_materials/results/final_frozen/p3_joint/selection.json"
+      ]
+    },
+    {
+      "id": "P303",
+      "requirement": "问题三Pareto表逐行匹配可行非支配结果",
+      "passed": true,
+      "paper_evidence": "表行数=16；缺失alpha=[]",
+      "result_evidence": "可行非支配行数=16",
+      "source_files": [
+        "supporting_materials/results/final_frozen/p3_joint/pareto_metrics.csv",
+        "paper/tables/p3_pareto.tex"
+      ]
+    },
+    {
+      "id": "P304",
+      "requirement": "P2与P3运行表现表匹配两份最终摘要且不使用逐日配额指标",
+      "passed": true,
+      "paper_evidence": "表行数=5；不匹配=[]；含日配额=False",
+      "result_evidence": "背景全期下限/完成数=43221/54137",
+      "source_files": [
+        "supporting_materials/results/final_frozen/p2_inpatient_only/summary.json",
+        "supporting_materials/results/final_frozen/p3_joint/selection.json",
+        "paper/tables/scenario_operation.tex"
+      ]
+    },
+    {
+      "id": "P305",
+      "requirement": "问题三运行解释中的P2/P3变化量匹配最终结果",
+      "passed": true,
+      "paper_evidence": "缺失格式组=[]",
+      "result_evidence": "排入分钟增幅=0.41068885641729214；P2={'scenario': 'P2_INPATIENT_ONLY', 'policy': 'FCFS_LOAD_BALANCED', 'inpatient_events': 70771, 'inpatient_complete_48h': 60368, 'inpatient_48h_rate': 0.8530047618374758, 'inpatient_scheduled_complete': 60368, 'inpatient_unscheduled': 10403, 'inpatient_wait_p50_hours_conditional': 3.583333333333333, 'inpatient_wait_p90_hours_conditional': 22.08333333333333, 'inpatient_wait_p95_hours_conditional': 23.666666666666668, 'inpatient_room_switch_rate_multi': 0.5816490392602026, 'background_events': 0, 'background_on_planned_day': 0, 'background_on_time_rate': nan, 'background_scheduled_complete': 0, 'fallback_scheduled_task_share': 0.0, 'scheduled_minutes': 1344765.0, 'staffed_capacity_utilization': 0.5453057997019556, 'transfer_minutes_assumption': 10}；P3={'scenario': 'P3_ALPHA_0.45', 'policy': 'FCFS_LOAD_BALANCED', 'inpatient_events': 70771, 'inpatient_complete_48h': 45861, 'inpatient_48h_rate': 0.6480196690734905, 'inpatient_scheduled_complete': 45861, 'inpatient_unscheduled': 24910, 'inpatient_wait_p50_hours_conditional': 3.9166666666666665, 'inpatient_wait_p90_hours_conditional': 21.83333333333333, 'inpatient_wait_p95_hours_conditional': 25.58333333333333, 'inpatient_room_switch_rate_multi': 0.3063292541115233, 'background_events': 96046, 'background_on_planned_day': 54137, 'background_on_time_rate': 0.5636569976886076, 'background_scheduled_complete': 54137, 'fallback_scheduled_task_share': 0.0, 'scheduled_minutes': 1897045.0, 'staffed_capacity_utilization': 0.7692568149792687, 'background_target_alpha': 0.45, 'background_total_events': 96046, 'background_required_events': 43221, 'background_completed_events': 54137, 'background_deficit_events': 0, 'epsilon_constraint_satisfied': True, 'construction_method': 'global_deficit_repair', 'background_order_strategy': 'fcfs', 'daily_quota_used': False, 'repair_triggered': True, 'p2_room_mode': 'current_load', 'alpha_zero_p2_complete_match': None, 'preparation_granularity': 'item', 'special_seed': 20260824, 'capability_mode': 'hierarchical', 'capacity_column': 'capacity_main', 'bladder_minutes': 60, 'transfer_minutes': 10, 'detail_saved': True, 'epsilon_feasible': True, 'pareto_nondominated': True, 'distance_to_ideal': 0.8110114512450477}",
+      "source_files": [
+        "supporting_materials/results/final_frozen/p2_inpatient_only/summary.json",
+        "supporting_materials/results/final_frozen/p3_joint/selection.json"
+      ]
+    },
+    {
+      "id": "V201",
+      "requirement": "P2精确对照表逐行匹配最终CSV数值及求解状态",
+      "passed": true,
+      "paper_evidence": "表行数=6；缺失状态=[]；缺失表头=[]；不匹配场景=[]",
+      "result_evidence": "CSV行数=6；状态=['OPTIMAL']",
+      "source_files": [
+        "supporting_materials/results/exact_benchmark/exact_vs_heuristic_metrics.csv",
+        "paper/tables/exact_benchmark.tex"
+      ]
+    },
+    {
+      "id": "V301",
+      "requirement": "P3精确对照表逐行匹配最终CSV数值及求解状态",
+      "passed": true,
+      "paper_evidence": "表行数=8；缺失状态=[]；缺失表头=[]；不匹配场景=[]",
+      "result_evidence": "CSV行数=8；状态=['OPTIMAL']",
+      "source_files": [
+        "supporting_materials/results/p3_exact_benchmark/p3_exact_vs_heuristic_metrics.csv",
+        "paper/tables/p3_exact_benchmark.tex"
+      ]
+    },
+    {
+      "id": "V202",
+      "requirement": "问题二正文报告精确对照的最大保守差距和OPTIMAL场景数",
+      "passed": true,
+      "paper_evidence": "目标窗口含gap=True；含OPTIMAL计数=True",
+      "result_evidence": "最大heuristic_gap_to_bound=0.000000；OPTIMAL=6/6",
+      "source_files": [
+        "supporting_materials/results/exact_benchmark/exact_vs_heuristic_metrics.csv",
+        "paper/sections/06_validation.tex"
+      ]
+    },
+    {
+      "id": "V302",
+      "requirement": "问题三正文报告精确对照的最大保守差距和OPTIMAL场景数",
+      "passed": true,
+      "paper_evidence": "目标窗口含gap=True；含OPTIMAL计数=True",
+      "result_evidence": "最大heuristic_gap_to_bound=0.000000；OPTIMAL=8/8",
+      "source_files": [
+        "supporting_materials/results/p3_exact_benchmark/p3_exact_vs_heuristic_metrics.csv",
+        "paper/sections/06_validation.tex"
+      ]
+    },
+    {
+      "id": "V303",
+      "requirement": "真实峰值日修复路径数值、零违规及最优性边界匹配当前审计",
+      "passed": true,
+      "paper_evidence": "缺失格式组=[]；边界措辞匹配=True",
+      "result_evidence": "date=2025-02-17；baseline={'construction_method': 'inpatient_first', 'background_order_strategy': 'scarcity', 'background_completed_events': 213, 'background_deficit_events': 12, 'inpatient_completed_events': 259, 'epsilon_constraint_satisfied': False}; selected=258/259；exact窗口触发修复数=0",
+      "source_files": [
+        "supporting_materials/results/p3_exact_benchmark/p3_repair_path_audit.json",
+        "supporting_materials/results/p3_exact_benchmark/p3_exact_vs_heuristic_metrics.csv",
+        "paper/sections/06_validation.tex"
+      ]
+    },
+    {
+      "id": "V401",
+      "requirement": "P2/P3独立验证均为零违规且任务数写入正文",
+      "passed": true,
+      "paper_evidence": "缺失任务数组=[]",
+      "result_evidence": "passed=[True, True]；schedule_rows=[117843, 159580]",
+      "source_files": [
+        "supporting_materials/results/final_frozen/p2_inpatient_only/independent_verification.json",
+        "supporting_materials/results/final_frozen/p3_joint/independent_verification.json"
+      ]
+    },
+    {
+      "id": "V402",
+      "requirement": "现实校准表逐层匹配最终校准CSV",
+      "passed": true,
+      "paper_evidence": "表行数=8；不匹配层=[]",
+      "result_evidence": "CSV行数=8",
+      "source_files": [
+        "supporting_materials/results/calibration/calibration_metrics.csv",
+        "paper/tables/calibration.tex"
+      ]
+    },
+    {
+      "id": "V405",
+      "requirement": "现实校准C0--C7关键完成率、相邻变化及C7语义匹配最终结果",
+      "passed": true,
+      "paper_evidence": "层级齐全=True；缺失格式组=[]；C7语义匹配=True",
+      "result_evidence": "C0--C7=[('C0_historical_report', '0.8376736233768068', ''), ('C1_duration_only', '1.0', '16.232637662319316'), ('C2_standard_hours', '1.0', '0.0'), ('C3_doctor_capacity', '1.0', '0.0'), ('C4_project_capability', '0.8550536236594085', '-14.49463763405915'), ('C5_item_preparation', '0.8530047618374758', '-0.2048861821932757'), ('C6_joint_background', '0.6480196690734905', '-20.498509276398526'), ('C7_formal_heuristic', '0.6480196690734905', '0.0')]",
+      "source_files": [
+        "supporting_materials/results/calibration/calibration_metrics.csv",
+        "paper/sections/06_validation.tex"
+      ]
+    },
+    {
+      "id": "V403",
+      "requirement": "八个单因素灵敏度情景逐行匹配最终结果",
+      "passed": true,
+      "paper_evidence": "表行数=8；不匹配情景=[]",
+      "result_evidence": "目标结果行数=8",
+      "source_files": [
+        "supporting_materials/results/final_frozen/sensitivity_metrics.csv",
+        "paper/tables/sensitivity_metrics.tex"
+      ]
+    },
+    {
+      "id": "V406",
+      "requirement": "灵敏度正文、准备粒度文件及全部epsilon状态匹配最终结果",
+      "passed": true,
+      "paper_evidence": "缺失格式组=[]；准备文件匹配=True；全达标=True；全零缺口=True；正文状态匹配=True",
+      "result_evidence": "doctor_low={'audit_scenario': 'doctor_low', 'scenario': 'P3_ALPHA_0.45', 'policy': 'FCFS_LOAD_BALANCED', 'inpatient_events': '70771', 'inpatient_complete_48h': '44817', 'inpatient_48h_rate': '0.633267863955575', 'inpatient_scheduled_complete': '44817', 'inpatient_unscheduled': '25954', 'inpatient_wait_p50_hours_conditional': '5.333333333333333', 'inpatient_wait_p90_hours_conditional': '26.666666666666668', 'inpatient_wait_p95_hours_conditional': '34.166666666666664', 'inpatient_room_switch_rate_multi': '0.2911290769145578', 'background_events': '96046', 'background_on_planned_day': '52232', 'background_on_time_rate': '0.5438227515981925', 'background_scheduled_complete': '52232', 'fallback_scheduled_task_share': '0.0', 'scheduled_minutes': '1819755.0', 'staffed_capacity_utilization': '0.8408500197533945', 'background_target_alpha': '0.45', 'background_total_events': '96046', 'background_required_events': '43221', 'background_completed_events': '52232', 'background_deficit_events': '0', 'epsilon_constraint_satisfied': 'True', 'construction_method': 'global_deficit_repair', 'background_order_strategy': 'fcfs', 'daily_quota_used': 'False', 'repair_triggered': 'True', 'p2_room_mode': 'current_load', 'alpha_zero_p2_complete_match': '', 'preparation_granularity': 'item', 'special_seed': '20260824', 'capability_mode': 'hierarchical', 'capacity_column': 'capacity_low', 'bladder_minutes': '60', 'transfer_minutes': '10', 'detail_saved': 'False'}；capability_AB={'audit_scenario': 'capability_AB', 'scenario': 'P3_ALPHA_0.45', 'policy': 'FCFS_LOAD_BALANCED', 'inpatient_events': '70771', 'inpatient_complete_48h': '46183', 'inpatient_48h_rate': '0.6525695553263342', 'inpatient_scheduled_complete': '46183', 'inpatient_unscheduled': '24588', 'inpatient_wait_p50_hours_conditional': '1.8333333333333333', 'inpatient_wait_p90_hours_conditional': '21.33333333333333', 'inpatient_wait_p95_hours_conditional': '22.08333333333333', 'inpatient_room_switch_rate_multi': '0.4114015172490171', 'background_events': '96046', 'background_on_planned_day': '46086', 'background_on_time_rate': '0.4798325802219769', 'background_scheduled_complete': '46086', 'fallback_scheduled_task_share': '0.0', 'scheduled_minutes': '1842275.0', 'staffed_capacity_utilization': '0.7470474336749693', 'background_target_alpha': '0.45', 'background_total_events': '96046', 'background_required_events': '43221', 'background_completed_events': '46086', 'background_deficit_events': '0', 'epsilon_constraint_satisfied': 'True', 'construction_method': 'inpatient_first', 'background_order_strategy': 'scarcity', 'daily_quota_used': 'False', 'repair_triggered': 'False', 'p2_room_mode': 'current_load', 'alpha_zero_p2_complete_match': '', 'preparation_granularity': 'item', 'special_seed': '20260824', 'capability_mode': 'strict', 'capacity_column': 'capacity_main', 'bladder_minutes': '60', 'transfer_minutes': '10', 'detail_saved': 'False'}；最大憋尿/转运变化=2.224976个百分点",
+      "source_files": [
+        "supporting_materials/results/final_frozen/sensitivity_metrics.csv",
+        "supporting_materials/results/final_frozen/preparation_granularity_sensitivity.csv",
+        "paper/sections/06_validation.tex"
+      ]
+    },
+    {
+      "id": "V404",
+      "requirement": "五随机种子统计表由最终种子情景重新汇总",
+      "passed": true,
+      "paper_evidence": "种子数=5；表行数=4；不匹配=[]",
+      "result_evidence": "均值、样本标准差、最小值和最大值由五个seed行计算",
+      "source_files": [
+        "supporting_materials/results/final_frozen/sensitivity_metrics.csv",
+        "paper/tables/seed_robustness.tex"
+      ]
+    },
+    {
+      "id": "V407",
+      "requirement": "多随机种子正文、汇总JSON及全部epsilon状态匹配最终结果",
+      "passed": true,
+      "paper_evidence": "缺失格式组=[]；汇总JSON匹配=True；全达标=True；全零缺口=True；正文状态匹配=True",
+      "result_evidence": "住院/背景样本标准差=0.00011374496218786827/0.00949483759186473；P90范围=21.83333333333333--29.416666666666668",
+      "source_files": [
+        "supporting_materials/results/final_frozen/sensitivity_metrics.csv",
+        "supporting_materials/results/final_frozen/special_seed_summary.json",
+        "paper/sections/06_validation.tex"
+      ]
+    },
+    {
+      "id": "T501",
+      "requirement": "论文关键结果表均在对应最终结果之后重新生成",
+      "passed": true,
+      "paper_evidence": "过期或缺失表=[]",
+      "result_evidence": "按文件修改时间核对结果到表格的生成顺序，不使用哈希自证",
+      "source_files": [
+        "supporting_materials/processed_data/unified_holdout/events.csv",
+        "paper/tables/data_scope.tex",
+        "supporting_materials/processed_data/unified_holdout/items.csv",
+        "paper/tables/data_scope.tex",
+        "supporting_materials/results/p1/service_duration_parameters.csv",
+        "paper/tables/duration_parameters.tex",
+        "supporting_materials/processed_data/unified_holdout/project_machine_summary.csv",
+        "paper/tables/capability_evidence.tex",
+        "supporting_materials/processed_data/unified_holdout/items.csv",
+        "paper/tables/capability_evidence.tex",
+        "supporting_materials/results/p1/peak_flat_summary.csv",
+        "paper/tables/peak_configuration.tex",
+        "supporting_materials/results/p1/daily_trends.csv",
+        "paper/tables/peak_configuration.tex",
+        "supporting_materials/processed_data/unified_holdout/doctor_slot_capacity.csv",
+        "paper/tables/peak_configuration.tex",
+        "supporting_materials/results/p1/chronological_validation.csv",
+        "paper/tables/forecast_comparison.tex",
+        "supporting_materials/results/p1/department_demand_overview_train.csv",
+        "paper/tables/p1_structure.tex",
+        "supporting_materials/results/p1/multiproject_coefficient_sensitivity.csv",
+        "paper/tables/p1_structure.tex",
+        "supporting_materials/results/final_frozen/p2_inpatient_only/policy_metrics.csv",
+        "paper/tables/p2_policy.tex",
+        "supporting_materials/results/capability/P2_CAPABILITY_FAILURE_DECOMPOSITION.csv",
+        "paper/tables/p2_failure.tex",
+        "supporting_materials/results/final_frozen/p2_inpatient_only/summary.json",
+        "paper/tables/p2_failure.tex",
+        "supporting_materials/results/final_frozen/p2_inpatient_only/room_utilization_daily.csv",
+        "paper/tables/p2_room_load.tex",
+        "supporting_materials/results/final_frozen/p3_joint/pareto_metrics.csv",
+        "paper/tables/p3_pareto.tex",
+        "supporting_materials/results/final_frozen/p2_inpatient_only/summary.json",
+        "paper/tables/scenario_operation.tex",
+        "supporting_materials/results/final_frozen/p3_joint/selection.json",
+        "paper/tables/scenario_operation.tex",
+        "supporting_materials/results/exact_benchmark/exact_vs_heuristic_metrics.csv",
+        "paper/tables/exact_benchmark.tex",
+        "supporting_materials/results/p3_exact_benchmark/p3_exact_vs_heuristic_metrics.csv",
+        "paper/tables/p3_exact_benchmark.tex",
+        "supporting_materials/results/final_frozen/p2_inpatient_only/independent_verification.json",
+        "paper/tables/verification.tex",
+        "supporting_materials/results/final_frozen/p3_joint/independent_verification.json",
+        "paper/tables/verification.tex",
+        "supporting_materials/results/calibration/calibration_metrics.csv",
+        "paper/tables/calibration.tex",
+        "supporting_materials/results/final_frozen/sensitivity_metrics.csv",
+        "paper/tables/sensitivity_metrics.tex",
+        "supporting_materials/results/final_frozen/special_seed_summary.json",
+        "paper/tables/seed_robustness.tex",
+        "supporting_materials/results/final_frozen/sensitivity_metrics.csv",
+        "paper/tables/seed_robustness.tex",
+        "supporting_materials/results/final_frozen/p2_inpatient_only/inpatient_recommended_schedule.csv",
+        "paper/tables/recommendation_sample.tex"
+      ]
+    },
+    {
+      "id": "T502",
+      "requirement": "论文结果图均在对应最终结果之后重新生成",
+      "passed": true,
+      "paper_evidence": "过期或缺失图=[]",
+      "result_evidence": "按文件修改时间核对结果到图的生成顺序，不重复计算哈希",
+      "source_files": [
+        "supporting_materials/results/p1/monthly_trends.csv",
+        "supporting_materials/figures/paper_final/fig01_monthly_demand.pdf",
+        "supporting_materials/processed_data/unified_holdout/doctor_slot_capacity.csv",
+        "supporting_materials/figures/paper_final/fig02_doctor_capacity.pdf",
+        "supporting_materials/processed_data/unified_holdout/project_machine_summary.csv",
+        "supporting_materials/figures/paper_final/fig03_capability_coverage.pdf",
+        "supporting_materials/processed_data/unified_holdout/items.csv",
+        "supporting_materials/figures/paper_final/fig03_capability_coverage.pdf",
+        "supporting_materials/processed_data/unified_holdout/events.csv",
+        "supporting_materials/figures/paper_final/fig03_capability_coverage.pdf",
+        "supporting_materials/results/final_frozen/p2_inpatient_only/policy_metrics.csv",
+        "supporting_materials/figures/paper_final/fig04_p2_policy.pdf",
+        "supporting_materials/results/final_frozen/p3_joint/pareto_metrics.csv",
+        "supporting_materials/figures/paper_final/fig05_pareto.pdf",
+        "supporting_materials/results/final_frozen/p3_joint/selection.json",
+        "supporting_materials/figures/paper_final/fig05_pareto.pdf",
+        "supporting_materials/results/calibration/calibration_metrics.csv",
+        "supporting_materials/figures/paper_final/fig06_calibration.pdf",
+        "supporting_materials/results/final_frozen/sensitivity_metrics.csv",
+        "supporting_materials/figures/paper_final/fig07_sensitivity.pdf",
+        "supporting_materials/results/final_frozen/p3_joint/daily_service_metrics.csv",
+        "supporting_materials/figures/paper_final/fig08_daily_performance.pdf",
+        "supporting_materials/results/final_frozen/p3_joint/final_patient_task_schedule.csv",
+        "supporting_materials/figures/paper_final/fig09_representative_gantt.pdf"
+      ]
+    }
+  ],
+  "failed_check_ids": [],
+  "authoritative_inputs": {
+    "p1_peak": "supporting_materials/results/p1/peak_flat_summary.csv",
+    "p1_forecast": "supporting_materials/results/p1/chronological_validation.csv",
+    "p1_department": "supporting_materials/results/p1/department_demand_overview_train.csv",
+    "p1_multi": "supporting_materials/results/p1/multiproject_coefficient_sensitivity.csv",
+    "p1_monthly": "supporting_materials/results/p1/monthly_trends.csv",
+    "p1_daily": "supporting_materials/results/p1/daily_trends.csv",
+    "p1_annual": "supporting_materials/results/p1/annual_trends.csv",
+    "p1_summary": "supporting_materials/results/p1/analysis_summary.json",
+    "p1_gap": "supporting_materials/results/p1/report_gap_proxy_by_category.csv",
+    "p1_duration": "supporting_materials/results/p1/service_duration_parameters.csv",
+    "unified_summary": "supporting_materials/processed_data/unified_holdout/summary.json",
+    "events": "supporting_materials/processed_data/unified_holdout/events.csv",
+    "items": "supporting_materials/processed_data/unified_holdout/items.csv",
+    "doctor_capacity": "supporting_materials/processed_data/unified_holdout/doctor_slot_capacity.csv",
+    "capability_summary": "supporting_materials/processed_data/unified_holdout/project_machine_summary.csv",
+    "p2_summary": "supporting_materials/results/final_frozen/p2_inpatient_only/summary.json",
+    "p2_policy": "supporting_materials/results/final_frozen/p2_inpatient_only/policy_metrics.csv",
+    "p2_failure": "supporting_materials/results/capability/P2_CAPABILITY_FAILURE_DECOMPOSITION.csv",
+    "p2_room": "supporting_materials/results/final_frozen/p2_inpatient_only/room_utilization_daily.csv",
+    "p2_recommendation": "supporting_materials/results/final_frozen/p2_inpatient_only/inpatient_recommended_schedule.csv",
+    "p3_selection": "supporting_materials/results/final_frozen/p3_joint/selection.json",
+    "p3_pareto": "supporting_materials/results/final_frozen/p3_joint/pareto_metrics.csv",
+    "p3_daily": "supporting_materials/results/final_frozen/p3_joint/daily_service_metrics.csv",
+    "p3_schedule": "supporting_materials/results/final_frozen/p3_joint/final_patient_task_schedule.csv",
+    "p2_exact": "supporting_materials/results/exact_benchmark/exact_vs_heuristic_metrics.csv",
+    "p3_exact": "supporting_materials/results/p3_exact_benchmark/p3_exact_vs_heuristic_metrics.csv",
+    "p3_repair": "supporting_materials/results/p3_exact_benchmark/p3_repair_path_audit.json",
+    "p2_verify": "supporting_materials/results/final_frozen/p2_inpatient_only/independent_verification.json",
+    "p3_verify": "supporting_materials/results/final_frozen/p3_joint/independent_verification.json",
+    "calibration": "supporting_materials/results/calibration/calibration_metrics.csv",
+    "sensitivity": "supporting_materials/results/final_frozen/sensitivity_metrics.csv",
+    "preparation": "supporting_materials/results/final_frozen/preparation_granularity_sensitivity.csv",
+    "seed": "supporting_materials/results/final_frozen/special_seed_summary.json"
+  }
+}

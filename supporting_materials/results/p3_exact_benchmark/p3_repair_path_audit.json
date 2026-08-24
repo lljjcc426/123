@@ -1,0 +1,65 @@
+{
+  "selection_rule": "evaluation case_date maximizing sum(upper_minutes); ties resolved by earliest case_date",
+  "date": "2025-02-17",
+  "event_count": 805,
+  "inpatient_events": 305,
+  "outpatient_events": 407,
+  "physical_exam_events": 93,
+  "upper_minutes_total": 20375,
+  "policy": "FCFS_LOAD_BALANCED",
+  "alpha": 0.45,
+  "alpha_source": "supporting_materials/results/final_frozen/p3_joint/selection.json",
+  "background_events": 500,
+  "required_background": 225,
+  "repair_triggered": true,
+  "candidates": [
+    {
+      "construction_method": "inpatient_first",
+      "background_order_strategy": "scarcity",
+      "background_completed_events": 213,
+      "background_deficit_events": 12,
+      "inpatient_completed_events": 259,
+      "epsilon_constraint_satisfied": false
+    },
+    {
+      "construction_method": "global_deficit_repair",
+      "background_order_strategy": "scarcity",
+      "background_completed_events": 258,
+      "background_deficit_events": 0,
+      "inpatient_completed_events": 259,
+      "epsilon_constraint_satisfied": true
+    },
+    {
+      "construction_method": "global_deficit_repair",
+      "background_order_strategy": "fcfs",
+      "background_completed_events": 260,
+      "background_deficit_events": 0,
+      "inpatient_completed_events": 259,
+      "epsilon_constraint_satisfied": true
+    }
+  ],
+  "selected_construction_method": "global_deficit_repair",
+  "selected_background_order_strategy": "scarcity",
+  "selected_background_complete": 258,
+  "selected_inpatient_complete": 259,
+  "selected_epsilon_satisfied": true,
+  "validation_violations": {
+    "event_completeness": 0,
+    "room_compatibility": 0,
+    "release_or_preparation": 0,
+    "deadline": 0,
+    "fasting_window": 0,
+    "workblock": 0,
+    "room_overlap": 0,
+    "patient_overlap_or_transfer": 0,
+    "doctor_capacity": 0,
+    "background_minimum": 0,
+    "task_key_unique": 0,
+    "task_identity": 0,
+    "patient_identity": 0,
+    "duration": 0
+  },
+  "validation_violation_count": 0,
+  "evidence_scope": "repair trigger and production-schedule feasibility",
+  "repair_branch_optimality_claimed": false
+}

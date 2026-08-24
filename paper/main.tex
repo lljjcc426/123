@@ -15,15 +15,17 @@
 \definecolor{linegray}{HTML}{B7C0C7}
 \definecolor{codebg}{HTML}{F6F8FA}
 \ctexset{
- section={format=\centering\heiti\zihao{4}\bfseries,beforeskip=12pt,afterskip=8pt},
+ section={name={,、},number=\chinese{section},format=\centering\heiti\zihao{4}\bfseries,beforeskip=12pt,afterskip=8pt},
  subsection={format=\heiti\zihao{-4}\bfseries,beforeskip=9pt,afterskip=4pt},
  subsubsection={format=\songti\zihao{-4}\bfseries,beforeskip=7pt,afterskip=3pt}
 }
+\renewcommand{\thesubsection}{\arabic{section}.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\arabic{section}.\arabic{subsection}.\arabic{subsubsection}}
 \setlength{\parindent}{2em}
 \setlength{\parskip}{0pt}
 \setlength{\footskip}{1.15cm}
 \setlength{\emergencystretch}{2em}
-\setstretch{1.08}
+\setstretch{1.0}
 \setlist{nosep,leftmargin=2em}
 \renewcommand{\arraystretch}{1.18}
 \setlength{\tabcolsep}{4.5pt}
@@ -32,8 +34,8 @@
 \cfoot{\zihao{5}\thepage}
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0pt}
-\DeclareCaptionFont{wuhao}{\zihao{5}\songti\color{black}}
-\captionsetup{font=wuhao,labelfont=wuhao,labelsep=quad,justification=centering}
+\DeclareCaptionFont{wuhaoheiti}{\zihao{5}\heiti\color{black}}
+\captionsetup{font=wuhaoheiti,labelfont=wuhaoheiti,labelsep=quad,justification=centering}
 \captionsetup[figure]{position=bottom,skip=5pt}
 \captionsetup[table]{position=top,skip=5pt}
 \AtBeginEnvironment{tabular}{\zihao{5}\songti}
@@ -55,33 +57,33 @@
  breaklines=true,showstringspaces=false,tabsize=4,columns=fullflexible,keepspaces=true,
  literate={Ⅰ}{{I}}1 {Ⅱ}{{II}}2 {Ⅲ}{{III}}3 {Ⅳ}{{IV}}2
 }
-\hypersetup{hidelinks,pdftitle={共享设备与医生约束下的超声预约优化},pdfauthor={},pdfsubject={数学建模竞赛论文},pdflang={zh-CN}}
+\hypersetup{hidelinks,pdftitle={基于需求预测与患者级多资源约束调度的超声预约优化},pdfauthor={},pdfsubject={数学建模竞赛论文},pdflang={zh-CN}}
 \makeatletter
 \patchcmd{\thebibliography}{\section*{\refname}}{}{}{}
 \makeatother
 
 \begin{document}
-\songti\zihao{-4}\color{ink}
+\songti\zihao{-4}\color{black}
 \pagenumbering{arabic}
 \begin{center}
  \vspace*{0.10cm}
- {\heiti\zihao{3}\bfseries 共享设备与医生约束下的超声预约优化}\par
+ {\heiti\zihao{3}\bfseries 基于需求预测与患者级多资源约束调度的超声预约优化}\par
  \vspace{14pt}
  {\heiti\zihao{4}\bfseries 摘\quad 要}
 \end{center}
 
-针对超声检查中多项目患者、设备专项能力、医生共享并发以及空腹、憋尿、床旁和跨室转运等现实约束，本文建立“需求分析与参数标定—纯住院排程—三类患者联合排程—独立验证”的患者级优化框架。数据按时间严格分层：2019年3月1日至2024年3月31日只用于识别项目目录、需求规律和医生容量，2024年4月1日至2025年3月31日只用于评价；住院评价分母保留全部70\,771个事件，完成定义为患者全部检查项目在开单后48小时内结束。
+超声预约同时受到多项目检查、设备专项能力、医生共享容量、患者准备和跨室转运的约束。本文以申请事件为决策单元，建立由需求预测、资源参数标定、纯住院调度和三类患者联合调度组成的患者级优化模型，并采用时间留出检验、精确子问题对照和独立可行性复核评价模型。
 
-对于问题一，以“患者编号+精确开单时刻”构造申请事件，将源字段中以“][”连接的收费项目拆成独立任务，剔除床旁加收和图文报告等非扫查项。服务项目按题给时长和资源语义分为11类，名义时长取区间中点，5\%复杂病例取区间上界。平峰、高峰和压力阈值全部由训练期日需求分位数确定：三类开单合计的平峰中位为412例/日，高峰阈值为671例/日，压力阈值为797.15例/日。时间顺序检验表明，三类开单合计的日历趋势对数岭回归WAPE为24.92\%，住院和门诊分别由过去8周同星期中位数取得16.04\%和14.04\%的最低WAPE。设备能力由表1中的直接项目、同义项目和明确的广义项目描述确定；无法从表1确认的15个项目不进入候选设备集。床旁检查只有在专项项目能力与7号机床旁位置能力同时成立时才可排入。
+针对问题一，按患者与精确开单时刻聚合申请事件，将复合收费字段拆为项目任务，以训练期分位数划分平峰、高峰和压力状态。三类患者合计需求的平峰中位数为{\heiti\bfseries 412例/日}，高峰和压力阈值分别为{\heiti\bfseries 671例/日}与{\heiti\bfseries 797.15例/日}；住院、门诊采用过去8周同星期中位数时，留出期WAPE分别为{\heiti\bfseries 16.04\%}和{\heiti\bfseries 14.04\%}。项目设备集合由题给设备说明逐项确定，床旁位置能力与项目能力取交集。
 
-对于问题二，在5分钟网格连续日历上建立纯住院患者级排程。决策同时确定患者顺序、项目内部顺序、开始时刻和设备；约束覆盖项目—设备兼容、设备互斥、医生星期—时隙并发、患者自身互斥、48小时截止、空腹10时前完成、憋尿准备、床旁位置以及跨室至少10分钟。采用共同设备优先、候选项目序列枚举和最早可行插入构成的大规模确定性算法。共享FCFS与最小松弛度保护均完成60\,359例，48小时完整完成率为85.29\%；前者等待中位数3.58小时且排入总分钟更少，故作为问题二推荐方案。
+针对问题二，建立{\heiti\bfseries 5分钟时间索引患者级调度模型}，同时决定患者顺序、项目次序、检查时刻和设备。针对全年规模，采用候选项目序列、共同设备优先和最早可行插入组成的确定性构造算法。FCFS--负荷均衡策略完整完成{\heiti\bfseries 60\,368例}住院事件，48小时完成率为{\heiti\bfseries 85.30\%}，等待时间中位数为3.58小时，因而作为纯住院推荐策略。
 
-对于问题三，将门诊和体检报告日期仅作为回顾性计划日压力代理，在同一设备—医生日历中引入背景完成率下限$\alpha$，形成$\varepsilon$约束多目标模型。对$\alpha=0,0.30,\ldots,0.70$计算Pareto前沿，并按到可达理想点的归一化距离选取$\alpha=0.30$。推荐点完成42\,730个住院事件，住院48小时率60.38\%；完成57\,177个门诊/体检计划日事件，背景率59.53\%。该背景率不被表述为“全部需求已满足”，而是当前标准班次、设备能力和医生容量下的可行服务水平。逐层现实校准显示，设备专项能力使纯住院率由100\%降至85.52\%，项目级准备进一步降至85.29\%，三类患者竞争则降至60.38\%，主要矛盾因此定位在专项设备与共享容量，而非求解器本身。
+针对问题三，在统一设备与医生日历中建立{\heiti\bfseries $\varepsilon$约束联合调度模型}，以背景服务率下限约束门诊、体检服务，并最大化住院48小时完成数。经验前沿的折中点为{\heiti\bfseries $\alpha=0.45$}，完整完成住院45\,861例、背景54\,137例，对应完成率分别为{\heiti\bfseries 64.80\%}和{\heiti\bfseries 56.37\%}。该点表示标准班次和既定设备能力下的服务折中，医院可根据政策下限沿非支配前沿调整方案。
 
-在六类代表性小窗口中，CP-SAT得到的最优完成数与构造算法完全一致；对P2、P3导出排程进行不调用调度内核的独立复核，任务键、时长、释放与截止、房间和患者互斥、转运、准备条件、医生并发及结果聚合的违规数均为0。项目级/事件级准备、医生偏紧容量、设备匹配规则边界、憋尿45/90分钟、转运5/15分钟及5个随机种子敏感性进一步界定了结论。由于附件没有真实预约时刻、扫查结束和报告提交时刻，本文将最后项目结束作为报告完成代理，结果用于预约方案与资源压力评估，不作临床因果推断。
+留出期预测、代表性子问题精确求解、排程结果独立复核以及参数敏感性共同检验模型。结果给出了峰平资源开放原则、患者级检查顺序和三类需求之间的可量化交换关系，可用于超声科预约与资源压力评估。
 
 \vspace{7pt}
-\noindent\textbf{关键词：}超声预约；患者级排程；共享资源；48小时完成率；项目设备兼容；Pareto优化
+\noindent{\heiti\bfseries 关键词：}超声预约；需求预测；患者级调度；多资源约束；$\varepsilon$约束
 
 \clearpage
 \input{sections/01_problem}
@@ -99,5 +101,7 @@
 \input{sections/09_references}
 \clearpage
 \appendix
+\ctexset{section={name={附录,\quad},number=\Alph{section}}}
+\renewcommand{\thesubsection}{\Alph{section}.\arabic{subsection}}
 \input{sections/appendix}
 \end{document}

@@ -1,15 +1,62 @@
 {
   "passed": true,
-  "schedule_rows": 176739,
-  "scheduled_events": 100303,
+  "scenario": "p3",
+  "schedule_rows": 159580,
+  "scheduled_events": 100296,
   "input_events": 167361,
+  "evaluation_scope": {
+    "state_events": 167361,
+    "evaluation_events": 166817,
+    "warmup_state_events": 544,
+    "evaluation_inpatient_events": 70771,
+    "evaluation_background_events": 96046,
+    "warmup_in_statistics": false
+  },
   "checks": {
+    "outcome_event_id_unique": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "result_event_scope_complete": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": {
+        "scenario": "p3",
+        "expected_state_events": 167361,
+        "outcome_events": 167361,
+        "missing_count": 0,
+        "unexpected_count": 0,
+        "missing_examples": [],
+        "unexpected_examples": []
+      }
+    },
+    "outcome_evaluation_cohort_matches_input": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": "warm-up events remain in scheduler state but are excluded from evaluation statistics"
+    },
+    "outcome_patient_source_matches_input": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "scheduled_event_has_outcome": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
     "unique_exported_task_key": {
       "passed": true,
       "violation_count": 0,
       "detail": "each scheduled task must occur exactly once"
     },
     "scheduled_task_exists_in_input": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": ""
+    },
+    "scheduled_patient_matches_input": {
       "passed": true,
       "violation_count": 0,
       "detail": ""
@@ -69,15 +116,29 @@
       "violation_count": 0,
       "detail": ""
     },
-    "no_same_patient_task_overlap": {
+    "no_same_event_task_overlap": {
       "passed": true,
       "violation_count": 0,
       "detail": ""
     },
-    "cross_room_transfer_at_least_10min": {
+    "within_event_cross_room_transfer_at_least_configured_minutes": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": {
+        "transfer_minutes": 10
+      }
+    },
+    "no_patient_task_overlap_across_events": {
       "passed": true,
       "violation_count": 0,
       "detail": ""
+    },
+    "adjacent_patient_cross_room_transfer_at_least_configured_minutes": {
+      "passed": true,
+      "violation_count": 0,
+      "detail": {
+        "transfer_minutes": 10
+      }
     },
     "doctor_capacity_defined": {
       "passed": true,

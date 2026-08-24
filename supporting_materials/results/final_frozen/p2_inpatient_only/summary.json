@@ -1,26 +1,45 @@
 {
   "scenario": "P2_INPATIENT_ONLY",
-  "selected_policy": "FCFS_SHARED",
+  "selected_policy": "FCFS_LOAD_BALANCED",
+  "selection_rule": [
+    "maximize inpatient_complete_48h",
+    "minimize inpatient_wait_p90_hours_conditional",
+    "minimize inpatient_wait_p50_hours_conditional",
+    "minimize inpatient_room_switch_rate_multi",
+    "minimize scheduled_minutes",
+    "ascending stable policy id"
+  ],
+  "candidate_policies": [
+    "FCFS_SHARED",
+    "SLACK_GUARD_SHARED",
+    "FCFS_LOAD_BALANCED",
+    "SLACK_LOAD_BALANCED",
+    "FCFS_SCARCITY_PRESERVING",
+    "SLACK_SCARCITY_PRESERVING"
+  ],
   "preparation_granularity": "item",
+  "slack_definition": "arrival_window_slack_minutes=(deadline_dt-order_dt)-work_slots*5",
+  "patient_constraint_scope": "patient_id across all events: no overlap; different-room adjacent tasks require configured transfer minutes in both temporal directions",
   "metrics": {
     "scenario": "P2_INPATIENT_ONLY",
-    "policy": "FCFS_SHARED",
+    "policy": "FCFS_LOAD_BALANCED",
     "inpatient_events": 70771,
-    "inpatient_complete_48h": 60359,
-    "inpatient_48h_rate": 0.8528775911037006,
-    "inpatient_scheduled_complete": 60359,
-    "inpatient_unscheduled": 10412,
-    "inpatient_wait_p50_hours_conditional": 3.5833333333333335,
-    "inpatient_wait_p90_hours_conditional": 22.083333333333332,
+    "inpatient_complete_48h": 60368,
+    "inpatient_48h_rate": 0.8530047618374758,
+    "inpatient_scheduled_complete": 60368,
+    "inpatient_unscheduled": 10403,
+    "inpatient_wait_p50_hours_conditional": 3.583333333333333,
+    "inpatient_wait_p90_hours_conditional": 22.08333333333333,
     "inpatient_wait_p95_hours_conditional": 23.666666666666668,
-    "inpatient_room_switch_rate_multi": 0.5811783598205881,
+    "inpatient_room_switch_rate_multi": 0.5816490392602026,
     "background_events": 0,
     "background_on_planned_day": 0,
     "background_on_time_rate": NaN,
     "background_scheduled_complete": 0,
     "fallback_scheduled_task_share": 0.0,
-    "scheduled_minutes": 1344260.0,
-    "staffed_capacity_utilization": 0.5451010208529748,
+    "scheduled_minutes": 1344765.0,
+    "staffed_capacity_utilization": 0.5453057997019556,
     "transfer_minutes_assumption": 10
-  }
+  },
+  "detail_materialized": true
 }

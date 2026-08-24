@@ -7,25 +7,25 @@
   "department_attribution": "department on the first source-ordered service project row",
   "sources": {
     "住院": {
-      "official_rows": 595872,
-      "service_rows": 579716,
+      "official_rows": 595958,
+      "service_rows": 579802,
       "service_events": 297656,
       "known_department_count": 87,
       "missing_department_events": 13,
       "mixed_department_events": 1
     },
     "门诊": {
-      "official_rows": 306825,
-      "service_rows": 306669,
+      "official_rows": 307416,
+      "service_rows": 307259,
       "service_events": 245614,
       "known_department_count": 133,
       "missing_department_events": 26,
       "mixed_department_events": 65
     },
     "体检": {
-      "official_rows": 564101,
-      "service_rows": 564101,
-      "service_events": 239569,
+      "official_rows": 564747,
+      "service_rows": 564746,
+      "service_events": 239570,
       "known_department_count": 1,
       "missing_department_events": 0,
       "mixed_department_events": 0
@@ -45,25 +45,25 @@
     "department_attribution": "department on the first source-ordered service project row",
     "sources": {
       "住院": {
-        "official_rows": 746878,
-        "service_rows": 721149,
+        "official_rows": 746964,
+        "service_rows": 721235,
         "service_events": 368427,
         "known_department_count": 88,
         "missing_department_events": 13,
         "mixed_department_events": 1
       },
       "门诊": {
-        "official_rows": 376014,
-        "service_rows": 375838,
+        "official_rows": 376605,
+        "service_rows": 376428,
         "service_events": 300446,
         "known_department_count": 139,
         "missing_department_events": 26,
         "mixed_department_events": 65
       },
       "体检": {
-        "official_rows": 675958,
-        "service_rows": 675958,
-        "service_events": 278670,
+        "official_rows": 676668,
+        "service_rows": 676667,
+        "service_events": 278671,
         "known_department_count": 1,
         "missing_department_events": 0,
         "mixed_department_events": 0

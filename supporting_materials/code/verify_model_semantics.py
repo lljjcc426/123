@@ -62,8 +62,34 @@ def main() -> None:
         if rooms and "7" not in evidence_rooms.get(row.project_norm, set()):
             bedside_bad += 1
     record("bedside_is_project_capability_intersection", bedside_bad, "床旁可行集只能是项目能力与7号机地点能力的交集")
-    record("all_former_fallback_projects_reviewed", abs(len(review) - 50), f"review_rows={len(review)}")
-    record("review_has_explicit_treatment", int(review["current_disposition"].isna().sum()), "每个原回退项目都有最终处理")
+    duplicate_legacy_projects = int(review["legacy_project"].duplicated().sum())
+    missing_dispositions = int(
+        review["current_disposition"].fillna("").astype(str).str.strip().eq("").sum()
+    )
+    retained_category_fallbacks = int(
+        review["category_fallback_retained"]
+        .fillna(False)
+        .astype(str)
+        .str.strip()
+        .str.lower()
+        .isin({"true", "1", "yes"})
+        .sum()
+    )
+    record(
+        "all_former_fallback_projects_reviewed",
+        abs(len(review) - 50) + duplicate_legacy_projects,
+        f"review_rows={len(review)}; duplicate_legacy_projects={duplicate_legacy_projects}",
+    )
+    record(
+        "review_has_explicit_treatment",
+        missing_dispositions,
+        "每个原回退项目都有最终处理",
+    )
+    record(
+        "legacy_category_fallback_removed",
+        retained_category_fallbacks,
+        "旧版50个项目均不得保留整类设备兜底",
+    )
     record("event_keys_unique", int(events["event_id"].duplicated().sum()), "事件ID唯一")
     record("item_keys_unique", int(items.duplicated(["event_id", "item_index"]).sum()), "事件内项目序号唯一")
     evaluation = events[events["evaluation_cohort"].astype(str).str.lower().eq("true")].copy()

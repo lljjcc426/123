@@ -1,6 +1,7 @@
 {
   "MODEL_AND_RESULTS_FROZEN": true,
-  "code_version": "working-tree pre-freeze audit; see git commit if committed",
+  "generated_at": "2026-08-25T04:51:35.202397+08:00",
+  "generated_by": "supporting_materials/code/finalize_model_audits.py",
   "random_seed": 20260824,
   "special_seed_experiment": [
     11,
@@ -29,123 +30,371 @@
   },
   "p2": {
     "scenario": "P2_INPATIENT_ONLY",
-    "selected_policy": "FCFS_SHARED",
+    "selected_policy": "FCFS_LOAD_BALANCED",
+    "selection_rule": [
+      "maximize inpatient_complete_48h",
+      "minimize inpatient_wait_p90_hours_conditional",
+      "minimize inpatient_wait_p50_hours_conditional",
+      "minimize inpatient_room_switch_rate_multi",
+      "minimize scheduled_minutes",
+      "ascending stable policy id"
+    ],
+    "candidate_policies": [
+      "FCFS_SHARED",
+      "SLACK_GUARD_SHARED",
+      "FCFS_LOAD_BALANCED",
+      "SLACK_LOAD_BALANCED",
+      "FCFS_SCARCITY_PRESERVING",
+      "SLACK_SCARCITY_PRESERVING"
+    ],
     "preparation_granularity": "item",
+    "slack_definition": "arrival_window_slack_minutes=(deadline_dt-order_dt)-work_slots*5",
+    "patient_constraint_scope": "patient_id across all events: no overlap; different-room adjacent tasks require configured transfer minutes in both temporal directions",
     "metrics": {
       "scenario": "P2_INPATIENT_ONLY",
-      "policy": "FCFS_SHARED",
+      "policy": "FCFS_LOAD_BALANCED",
       "inpatient_events": 70771,
-      "inpatient_complete_48h": 60359,
-      "inpatient_48h_rate": 0.8528775911037006,
-      "inpatient_scheduled_complete": 60359,
-      "inpatient_unscheduled": 10412,
-      "inpatient_wait_p50_hours_conditional": 3.5833333333333335,
-      "inpatient_wait_p90_hours_conditional": 22.083333333333332,
+      "inpatient_complete_48h": 60368,
+      "inpatient_48h_rate": 0.8530047618374758,
+      "inpatient_scheduled_complete": 60368,
+      "inpatient_unscheduled": 10403,
+      "inpatient_wait_p50_hours_conditional": 3.583333333333333,
+      "inpatient_wait_p90_hours_conditional": 22.08333333333333,
       "inpatient_wait_p95_hours_conditional": 23.666666666666668,
-      "inpatient_room_switch_rate_multi": 0.5811783598205881,
+      "inpatient_room_switch_rate_multi": 0.5816490392602026,
       "background_events": 0,
       "background_on_planned_day": 0,
       "background_on_time_rate": NaN,
       "background_scheduled_complete": 0,
       "fallback_scheduled_task_share": 0.0,
-      "scheduled_minutes": 1344260.0,
-      "staffed_capacity_utilization": 0.5451010208529748,
+      "scheduled_minutes": 1344765.0,
+      "staffed_capacity_utilization": 0.5453057997019556,
       "transfer_minutes_assumption": 10
-    }
+    },
+    "detail_materialized": true
   },
   "p3": {
-    "selection_rule": "minimum normalized Euclidean distance to the attainable Pareto ideal",
-    "selected_alpha": 0.3,
+    "formal_constraint": "background_completed >= ceil(alpha * total_background)",
+    "candidate_set": "feasible attained nondominated heuristic solutions",
+    "selection_rule": "minimum normalized Euclidean distance to the attained ideal",
+    "normalization": {
+      "background_min": 0.4047227370218437,
+      "background_max": 0.6568206900860004,
+      "inpatient_min": 0.569060773480663,
+      "inpatient_max": 0.8530047618374758,
+      "formula": "sqrt(((background_max-background_rate)/(background_max-background_min))^2+((inpatient_max-inpatient_rate)/(inpatient_max-inpatient_min))^2)"
+    },
+    "nondominated_alpha_values": [
+      0.0,
+      0.05,
+      0.1,
+      0.15,
+      0.2,
+      0.25,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.525,
+      0.55,
+      0.575,
+      0.6,
+      0.65
+    ],
+    "alpha_grid": [
+      0.0,
+      0.05,
+      0.1,
+      0.15,
+      0.2,
+      0.25,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.525,
+      0.55,
+      0.575,
+      0.6,
+      0.65,
+      0.7
+    ],
+    "selected_alpha": 0.45,
     "selected_metrics": {
-      "scenario": "P3_ALPHA_0.30",
-      "policy": "FCFS_SHARED",
+      "scenario": "P3_ALPHA_0.45",
+      "policy": "FCFS_LOAD_BALANCED",
       "inpatient_events": 70771,
-      "inpatient_complete_48h": 42730,
-      "inpatient_48h_rate": 0.6037783838012746,
-      "inpatient_scheduled_complete": 42730,
-      "inpatient_unscheduled": 28041,
-      "inpatient_wait_p50_hours_conditional": 3.0,
-      "inpatient_wait_p90_hours_conditional": 21.75,
-      "inpatient_wait_p95_hours_conditional": 38.583333333333336,
-      "inpatient_room_switch_rate_multi": 0.2503737748491057,
+      "inpatient_complete_48h": 45861,
+      "inpatient_48h_rate": 0.6480196690734905,
+      "inpatient_scheduled_complete": 45861,
+      "inpatient_unscheduled": 24910,
+      "inpatient_wait_p50_hours_conditional": 3.9166666666666665,
+      "inpatient_wait_p90_hours_conditional": 21.83333333333333,
+      "inpatient_wait_p95_hours_conditional": 25.58333333333333,
+      "inpatient_room_switch_rate_multi": 0.3063292541115233,
       "background_events": 96046,
-      "background_on_planned_day": 57177,
-      "background_on_time_rate": 0.5953084980113695,
-      "background_scheduled_complete": 57177,
+      "background_on_planned_day": 54137,
+      "background_on_time_rate": 0.5636569976886076,
+      "background_scheduled_complete": 54137,
       "fallback_scheduled_task_share": 0.0,
-      "scheduled_minutes": 2066410.0,
-      "staffed_capacity_utilization": 0.8379347748953296,
-      "background_target_alpha": 0.3,
-      "quota_shortfall_days": 1,
-      "quota_target_events": 28977,
-      "quota_achieved_before_inpatient": 28970,
+      "scheduled_minutes": 1897045.0,
+      "staffed_capacity_utilization": 0.7692568149792687,
+      "background_target_alpha": 0.45,
+      "background_total_events": 96046,
+      "background_required_events": 43221,
+      "background_completed_events": 54137,
+      "background_deficit_events": 0,
+      "epsilon_constraint_satisfied": true,
+      "construction_method": "global_deficit_repair",
+      "background_order_strategy": "fcfs",
+      "daily_quota_used": false,
+      "repair_triggered": true,
+      "p2_room_mode": "current_load",
+      "alpha_zero_p2_complete_match": null,
       "preparation_granularity": "item",
       "special_seed": 20260824,
       "capability_mode": "hierarchical",
       "capacity_column": "capacity_main",
       "bladder_minutes": 60,
       "transfer_minutes": 10,
+      "detail_saved": true,
+      "epsilon_feasible": true,
       "pareto_nondominated": true,
-      "distance_to_ideal": 0.915027740483536
-    }
+      "distance_to_ideal": 0.8110114512450477
+    },
+    "p2_policy": "FCFS_LOAD_BALANCED",
+    "slack_definition": "arrival_window_slack_minutes=(deadline_dt-order_dt)-work_slots*5",
+    "patient_constraint_scope": "patient_id across all events: no overlap; different-room adjacent tasks require configured transfer minutes in both temporal directions",
+    "global_epsilon_algorithm": "inpatient_first_then_global_deficit_repair",
+    "daily_quota_used": false,
+    "local_refinement_completed": true,
+    "requires_new_point_runs_before_final_selection": false,
+    "detail_materialized": true,
+    "missing_detail_files": [],
+    "selection_ready_for_freeze": true
   },
-  "selected_alpha": 0.3,
+  "selected_alpha": 0.45,
+  "paper_numbers_match_final_results": true,
   "freeze_checks": {
     "train_holdout_no_leakage": true,
     "all_50_fallback_reviewed": true,
     "no_blanket_category_fallback": true,
     "bedside_semantics_passed": true,
-    "p2_exists": true,
-    "p3_pareto_exists": true,
-    "historical_calibration_exists": true,
-    "exact_benchmark_exists": true,
-    "preparation_sensitivity_exists": true,
-    "multi_seed_exists": true,
     "input_semantics_passed": true,
+    "p2_pure_inpatient_scenario": true,
+    "p2_policy_selection_matches_code": true,
+    "p2_slack_definition_matches_code": true,
+    "p2_exact_implementation_equivalent": true,
+    "p2_exact_status_metadata_valid": true,
+    "p2_high_load_benchmark_passed": true,
+    "p2_capability_failure_decomposed": true,
     "p2_schedule_verification_passed": true,
+    "p3_global_epsilon_semantics_passed": true,
+    "p3_no_daily_quota": true,
+    "p3_alpha_grid_dense": true,
+    "p3_local_refinement_completed": true,
+    "p3_exact_benchmark_exists": true,
+    "p3_exact_status_metadata_valid": true,
+    "p3_repair_path_audit_passed": true,
+    "p2_p3_kernel_equivalent": true,
     "p3_schedule_verification_passed": true,
-    "authoritative_result_unique": true
+    "historical_calibration_exists": true,
+    "preparation_sensitivity_exists": true,
+    "sensitivity_scenarios_complete": true,
+    "multi_seed_exists": true,
+    "paper_numbers_match_final_results": true,
+    "authoritative_result_unique": true,
+    "all_authoritative_files_present": true
   },
+  "freeze_check_evidence": {
+    "train_holdout_no_leakage": "P1 thresholds, forecast split, project catalog and duration/doctor estimates must all respect 2024-03-31",
+    "all_50_fallback_reviewed": "legacy_review_rows=50; expected=50",
+    "no_blanket_category_fallback": "rooms must trace to A/B/C evidence; level D and family-wide fallback are excluded",
+    "bedside_semantics_passed": "machine 7 requires project capability intersect bedside-location capability",
+    "input_semantics_passed": "input_semantic_verification.passed=True",
+    "p2_pure_inpatient_scenario": "P2 must contain no background events; warm-up may seed state but not evaluation statistics",
+    "p2_policy_selection_matches_code": "summary='FCFS_LOAD_BALANCED'; fixed-key result='FCFS_LOAD_BALANCED'; policies=['FCFS_LOAD_BALANCED', 'FCFS_SCARCITY_PRESERVING', 'FCFS_SHARED', 'SLACK_GUARD_SHARED', 'SLACK_LOAD_BALANCED', 'SLACK_SCARCITY_PRESERVING']",
+    "p2_slack_definition_matches_code": "summary='arrival_window_slack_minutes=(deadline_dt-order_dt)-work_slots*5'; code='arrival_window_slack_minutes=(deadline_dt-order_dt)-work_slots*5'",
+    "p2_exact_implementation_equivalent": "cases=['bedside_peak', 'multi_project_peak', 'normal_weekday', 'obstetric_peak', 'peak_weekday', 'weekend']; equivalence_columns={'equiv_event_deadline', 'equiv_workblock', 'equiv_room_compatibility_and_choice', 'equiv_task_object_identity', 'equiv_patient_event_identity', 'equiv_complete_event_task_expansion', 'equiv_preparation_release', 'equiv_transfer', 'equiv_patient_nonoverlap', 'equiv_doctor_capacity', 'equiv_deterministic_tie_break', 'equiv_task_patient_identity'}",
+    "p2_exact_status_metadata_valid": "status/bound/gap/time semantics valid",
+    "p2_high_load_benchmark_passed": "six fixed windows need incumbents; peak_weekday must contain at least 100 events",
+    "p2_capability_failure_decomposed": "categories=['A', 'B', 'C', 'D', 'E', 'F']; decomposition=10258; P2 failures=10258",
+    "p2_schedule_verification_passed": "missing=[]; failed=[]",
+    "p3_global_epsilon_semantics_passed": "required=ceil(alpha*total), feasibility and selected counts are recomputed",
+    "p3_no_daily_quota": "selection, scan and every candidate must use daily_quota_used=false; deprecated_columns=[]; deprecated_keys=[]",
+    "p3_alpha_grid_dense": "required=[0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7]; actual=[0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.525, 0.55, 0.575, 0.6, 0.65, 0.7]",
+    "p3_local_refinement_completed": "noncoarse_point=True; completed=True",
+    "p3_exact_benchmark_exists": "cases=['background_peak_n40', 'bedside_pressure_n20', 'equipment_competition_n60', 'inpatient_peak_n60', 'multi_project_peak_n40', 'obstetric_pressure_n40', 'ordinary_joint_n20', 'recommended_alpha_typical_n100']; alpha=0.45; deprecated_quota_columns=[]; source must be selection.json",
+    "p3_exact_status_metadata_valid": "status/bound/gap/time semantics valid",
+    "p3_repair_path_audit_passed": "input_recomputed=True; date=2025-02-17; baseline=[{'construction_method': 'inpatient_first', 'background_order_strategy': 'scarcity', 'background_completed_events': 213, 'background_deficit_events': 12, 'inpatient_completed_events': 259, 'epsilon_constraint_satisfied': False}]; selected=global_deficit_repair/scarcity; validation_keys=['background_minimum', 'deadline', 'doctor_capacity', 'duration', 'event_completeness', 'fasting_window', 'patient_identity', 'patient_overlap_or_transfer', 'release_or_preparation', 'room_compatibility', 'room_overlap', 'task_identity', 'task_key_unique', 'workblock']; violations=0",
+    "p2_p3_kernel_equivalent": "P3 alpha=0 inpatient tasks and outcomes must match selected P2 row for row",
+    "p3_schedule_verification_passed": "missing=[]; failed=[]",
+    "historical_calibration_exists": "scenarios=['C0_historical_report', 'C1_duration_only', 'C2_standard_hours', 'C3_doctor_capacity', 'C4_project_capability', 'C5_item_preparation', 'C6_joint_background', 'C7_formal_heuristic']; all rates exclude warm-up; C5=P2 and C6/C7=selected P3",
+    "preparation_sensitivity_exists": "preparation_scenarios=['preparation_event', 'preparation_item']; issues=[]",
+    "sensitivity_scenarios_complete": "required=['bladder45', 'bladder90', 'capability_AB', 'doctor_low', 'preparation_event', 'preparation_item', 'seed_11', 'seed_131', 'seed_29', 'seed_47', 'seed_83', 'transfer15', 'transfer5']; actual=['bladder45', 'bladder90', 'capability_AB', 'doctor_low', 'preparation_event', 'preparation_item', 'seed_11', 'seed_131', 'seed_29', 'seed_47', 'seed_83', 'transfer15', 'transfer5']; issues=[]",
+    "multi_seed_exists": "required=['seed_11', 'seed_131', 'seed_29', 'seed_47', 'seed_83']; count=5; issues=[]",
+    "paper_numbers_match_final_results": "consistency passed=True",
+    "authoritative_result_unique": "legacy supporting_materials/results/unified_schedule must be absent",
+    "all_authoritative_files_present": "all manifest inputs must exist and be non-empty"
+  },
+  "artifact_errors": {},
   "authoritative_files": [
     {
       "path": "supporting_materials/results/final_frozen/p2_inpatient_only/summary.json",
-      "sha256": "c0f56d73665de63866809d0aece0306ae6f55146b29ac0e0dca940bd4a299995"
+      "exists": true,
+      "size_bytes": 1780
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p2_inpatient_only/policy_metrics.csv",
+      "exists": true,
+      "size_bytes": 1595
     },
     {
       "path": "supporting_materials/results/final_frozen/p2_inpatient_only/final_patient_task_schedule.csv",
-      "sha256": "5041bc01d041b049da4a646c5fe85f7d216d07b1286d24d9c3711ec9b2b800ed"
+      "exists": true,
+      "size_bytes": 28083263
     },
     {
       "path": "supporting_materials/results/final_frozen/p2_inpatient_only/final_patient_outcomes.csv",
-      "sha256": "dc5a8a52032d476c5f7f2b48b0e6afcb02159ed31bf2a47c0af271fb6e7699f6"
+      "exists": true,
+      "size_bytes": 28475626
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p2_inpatient_only/failure_reason_breakdown.csv",
+      "exists": true,
+      "size_bytes": 106
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p2_inpatient_only/independent_verification.json",
+      "exists": true,
+      "size_bytes": 4177
     },
     {
       "path": "supporting_materials/results/final_frozen/p3_joint/selection.json",
-      "sha256": "335704ce743cade525801bbdc32e80b752d4c6e00828733429d4f266992ca12a"
+      "exists": true,
+      "size_bytes": 3335
     },
     {
       "path": "supporting_materials/results/final_frozen/p3_joint/pareto_metrics.csv",
-      "sha256": "4ac5771da518746431c72fed0bdf7f87e5f8f25df5a1fdf46abdb8ade8d817aa"
+      "exists": true,
+      "size_bytes": 7234
     },
     {
       "path": "supporting_materials/results/final_frozen/p3_joint/final_patient_task_schedule.csv",
-      "sha256": "92063a75f7fb51ee46fef5ba13366a82a317e88fc662f1964f306defe282a3ee"
+      "exists": true,
+      "size_bytes": 37912730
     },
     {
       "path": "supporting_materials/results/final_frozen/p3_joint/final_patient_outcomes.csv",
-      "sha256": "85e3d5610af39c92e86e47c9536dac47a5569abb0298435d87b1b132253ace29"
+      "exists": true,
+      "size_bytes": 65840956
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p3_joint/epsilon_diagnostics.json",
+      "exists": true,
+      "size_bytes": 2678
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p3_joint/independent_verification.json",
+      "exists": true,
+      "size_bytes": 4187
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p3_joint/p2_p3_alpha_zero_equivalence.json",
+      "exists": true,
+      "size_bytes": 1311
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p3_shards/alpha_0.00/metrics.csv",
+      "exists": true,
+      "size_bytes": 1199
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p3_shards/alpha_0.00/final_patient_task_schedule.csv",
+      "exists": true,
+      "size_bytes": 39663069
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/p3_shards/alpha_0.00/final_patient_outcomes.csv",
+      "exists": true,
+      "size_bytes": 65866682
     },
     {
       "path": "supporting_materials/results/final_frozen/sensitivity_metrics.csv",
-      "sha256": "dddd62023592b85f5b6e8e4dd5f064fe1a227e25a15ed7d99e007f96bbf43184"
+      "exists": true,
+      "size_bytes": 5561
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/special_seed_summary.json",
+      "exists": true,
+      "size_bytes": 464
+    },
+    {
+      "path": "supporting_materials/results/final_frozen/preparation_granularity_sensitivity.csv",
+      "exists": true,
+      "size_bytes": 1611
     },
     {
       "path": "supporting_materials/results/exact_benchmark/exact_vs_heuristic_metrics.csv",
-      "sha256": "769db232f3f6665ffdb0858a0503f71ff11a796e539231d32e5d89d7862513d7"
+      "exists": true,
+      "size_bytes": 1642
+    },
+    {
+      "path": "supporting_materials/results/p3_exact_benchmark/p3_exact_vs_heuristic_metrics.csv",
+      "exists": true,
+      "size_bytes": 2476
+    },
+    {
+      "path": "supporting_materials/results/p3_exact_benchmark/p3_repair_path_audit.json",
+      "exists": true,
+      "size_bytes": 2192
     },
     {
       "path": "supporting_materials/results/calibration/calibration_metrics.csv",
-      "sha256": "0dd2abe60e59f9a31e2d6127ab0fa929a9546b22c972a61255c625bfe70d22d0"
+      "exists": true,
+      "size_bytes": 1205
+    },
+    {
+      "path": "supporting_materials/results/validation/input_semantic_verification.json",
+      "exists": true,
+      "size_bytes": 2283
+    },
+    {
+      "path": "supporting_materials/results/p1/peak_flat_summary.csv",
+      "exists": true,
+      "size_bytes": 2031
+    },
+    {
+      "path": "supporting_materials/results/p1/chronological_validation.csv",
+      "exists": true,
+      "size_bytes": 4763
+    },
+    {
+      "path": "supporting_materials/results/p1/analysis_summary.json",
+      "exists": true,
+      "size_bytes": 11773
+    },
+    {
+      "path": "supporting_materials/results/capability/LEGACY_50_FALLBACK_PROJECT_AUDIT.csv",
+      "exists": true,
+      "size_bytes": 12320
+    },
+    {
+      "path": "supporting_materials/results/capability/FALLBACK_PROJECT_REVIEW.csv",
+      "exists": true,
+      "size_bytes": 569148
+    },
+    {
+      "path": "supporting_materials/results/capability/P2_CAPABILITY_FAILURE_DECOMPOSITION.csv",
+      "exists": true,
+      "size_bytes": 1811
+    },
+    {
+      "path": "qa/MODEL_RESULT_FINAL_CONSISTENCY_AUDIT.json",
+      "exists": true,
+      "size_bytes": 34448
     }
   ]
 }

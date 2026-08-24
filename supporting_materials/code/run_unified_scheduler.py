@@ -1,11 +1,8 @@
-"""Continuous patient-level scheduling of outpatient, physical-exam and inpatient jobs.
+"""Shared patient-, task- and room-level scheduling kernel for P2 and P3.
 
-The annual replay has one calendar state.  Outpatient and physical-exam
-appointment-day demand is placed first because the problem requires it to be
-met; inpatient policies are compared on the identical residual resources.
-The JOINT_SCARCITY policy additionally arranges background demand by project
-scarcity.  It is retained as a Pareto alternative, while the authoritative
-policy is selected by the competition's inpatient 48-hour KPI.
+Policy dimensions are explicit: patient order, background order and room
+tie-break.  P2 and P3 call the same calendar constructor and group scheduler;
+P3 only adds the annual background epsilon controller around this kernel.
 """
 
 from __future__ import annotations
@@ -36,17 +33,76 @@ TRANSFER_MINUTES = 10
 FOLLOWUP_DAYS = 2
 
 POLICIES = {
-    "FCFS_SHARED": {"background": "fcfs", "inpatient": "fcfs"},
-    "SLACK_GUARD_SHARED": {"background": "fcfs", "inpatient": "slack"},
-    "JOINT_SCARCITY": {"background": "scarcity", "inpatient": "slack"},
+    "FCFS_SHARED": {
+        "background": "fcfs", "inpatient": "fcfs", "room_mode": "lowest_id",
+    },
+    "SLACK_GUARD_SHARED": {
+        "background": "fcfs", "inpatient": "slack", "room_mode": "lowest_id",
+    },
+    "FCFS_LOAD_BALANCED": {
+        "background": "fcfs", "inpatient": "fcfs", "room_mode": "current_load",
+    },
+    "SLACK_LOAD_BALANCED": {
+        "background": "fcfs", "inpatient": "slack", "room_mode": "current_load",
+    },
+    "FCFS_SCARCITY_PRESERVING": {
+        "background": "scarcity", "inpatient": "fcfs", "room_mode": "scarcity_preserving",
+    },
+    "SLACK_SCARCITY_PRESERVING": {
+        "background": "scarcity", "inpatient": "slack", "room_mode": "scarcity_preserving",
+    },
+    # Retained for backward-compatible replay of the previous joint candidate.
+    "JOINT_SCARCITY": {
+        "background": "scarcity", "inpatient": "slack", "room_mode": "scarcity_preserving",
+    },
 }
-AUTHORITATIVE_POLICY = "FCFS_SHARED"
+P2_POLICY_CANDIDATES = (
+    "FCFS_SHARED",
+    "SLACK_GUARD_SHARED",
+    "FCFS_LOAD_BALANCED",
+    "SLACK_LOAD_BALANCED",
+    "FCFS_SCARCITY_PRESERVING",
+    "SLACK_SCARCITY_PRESERVING",
+)
+P2_SUMMARY = SUPPORTING / "results" / "final_frozen" / "p2_inpatient_only" / "summary.json"
+
+# Fixed before the second-stage rerun.  The tuple is minimized in this order.
+P2_SELECTION_RULE = (
+    "maximize inpatient_complete_48h",
+    "minimize inpatient_wait_p90_hours_conditional",
+    "minimize inpatient_wait_p50_hours_conditional",
+    "minimize inpatient_room_switch_rate_multi",
+    "minimize scheduled_minutes",
+    "ascending stable policy id",
+)
+INPATIENT_SLACK_DEFINITION = (
+    "arrival_window_slack_minutes=(deadline_dt-order_dt)-work_slots*5"
+)
+PATIENT_CONSTRAINT_SCOPE = (
+    "patient_id across all events: no overlap; different-room adjacent tasks "
+    "require configured transfer minutes in both temporal directions"
+)
 
 
 def as_bool(series: pd.Series) -> pd.Series:
     if pd.api.types.is_bool_dtype(series):
         return series.fillna(False)
     return series.astype("string").str.lower().isin(["true", "1", "yes"])
+
+
+def resolve_authoritative_policy(explicit_policy: str | None) -> str:
+    """Resolve the production policy from CLI input or the frozen P2 selection."""
+    if explicit_policy is not None:
+        return explicit_policy
+    if not P2_SUMMARY.exists():
+        raise FileNotFoundError(
+            "authoritative P2 policy is unavailable; run the P2 selection first "
+            "or pass --main-policy explicitly"
+        )
+    policy = str(json.loads(P2_SUMMARY.read_text(encoding="utf-8"))["selected_policy"])
+    if policy not in P2_POLICY_CANDIDATES:
+        raise ValueError(f"unsupported selected P2 policy: {policy}")
+    return policy
 
 
 def room_tuple(value: Any) -> tuple[str, ...]:
@@ -64,6 +120,7 @@ def room_tuple(value: Any) -> tuple[str, ...]:
 @dataclass(frozen=True)
 class Task:
     event_id: str
+    patient_id: str
     item_index: int
     project_norm: str
     category: str
@@ -123,6 +180,10 @@ class WorkCalendar:
         self.room_scarcity = room_scarcity
         self.room_mode = room_mode
         self.transfer_slots = transfer_minutes // SLOT_MINUTES
+        self.transfer_delta = pd.Timedelta(minutes=self.transfer_slots * SLOT_MINUTES)
+        self.patient_intervals: dict[
+            str, list[tuple[pd.Timestamp, pd.Timestamp, str]]
+        ] = {}
 
     def clone(self) -> "WorkCalendar":
         """Copy mutable allocation state while sharing immutable calendar axes."""
@@ -140,6 +201,11 @@ class WorkCalendar:
         other.room_scarcity = self.room_scarcity
         other.room_mode = self.room_mode
         other.transfer_slots = self.transfer_slots
+        other.transfer_delta = self.transfer_delta
+        other.patient_intervals = {
+            patient_id: list(intervals)
+            for patient_id, intervals in self.patient_intervals.items()
+        }
         return other
 
     def _capacity_array(self, frame: pd.DataFrame, column: str) -> np.ndarray:
@@ -183,6 +249,11 @@ class WorkCalendar:
         self.room_busy[room_index, interval] = True
         self.doctor_load[interval] += 1
         self.room_work_slots[step.room_id] += step.task.duration_slots
+        start = self.times[step.start_index]
+        end = self.end_timestamp(step.start_index, step.task.duration_slots)
+        self.patient_intervals.setdefault(step.task.patient_id, []).append(
+            (start, end, step.room_id)
+        )
 
     def release(self, step: PlanStep) -> None:
         room_index = self.room_index[step.room_id]
@@ -190,20 +261,52 @@ class WorkCalendar:
         self.room_busy[room_index, interval] = False
         self.doctor_load[interval] -= 1
         self.room_work_slots[step.room_id] -= step.task.duration_slots
+        start = self.times[step.start_index]
+        end = self.end_timestamp(step.start_index, step.task.duration_slots)
+        intervals = self.patient_intervals[step.task.patient_id]
+        intervals.remove((start, end, step.room_id))
+        if not intervals:
+            del self.patient_intervals[step.task.patient_id]
+
+    def patient_available(
+        self,
+        patient_id: str,
+        starts: pd.DatetimeIndex,
+        ends: pd.DatetimeIndex,
+        room_id: str,
+    ) -> np.ndarray:
+        """Check sparse cross-event patient occupancy and bidirectional transfer."""
+        feasible = np.ones(len(starts), dtype=bool)
+        for prior_start, prior_end, prior_room in self.patient_intervals.get(patient_id, []):
+            if prior_room == room_id:
+                separated = (ends <= prior_start) | (starts >= prior_end)
+            else:
+                separated = (
+                    (ends + self.transfer_delta <= prior_start)
+                    | (starts >= prior_end + self.transfer_delta)
+                )
+            feasible &= np.asarray(separated, dtype=bool)
+        return feasible
+
+    def room_priority_key(self, room: str) -> tuple[float | int, ...]:
+        """Return the declared deterministic room tie-break for one policy."""
+        if self.room_mode == "lowest_id":
+            return (int(room),)
+        if self.room_mode == "current_load":
+            return (self.room_work_slots[room], int(room))
+        if self.room_mode == "scarcity_preserving":
+            # Lower training demand means the room is less scarce for other jobs.
+            return (
+                self.room_scarcity.get(room, 0.0),
+                self.room_work_slots[room],
+                int(room),
+            )
+        raise ValueError(f"unknown room mode: {self.room_mode}")
 
     def room_choice(self, rooms: list[str], last_room: str | None) -> str:
         if last_room in rooms:
             return str(last_room)
-        if self.room_mode == "fcfs":
-            return min(rooms, key=int)
-        return min(
-            rooms,
-            key=lambda room: (
-                self.room_work_slots[room],
-                self.room_scarcity.get(room, 0.0),
-                int(room),
-            ),
-        )
+        return min(rooms, key=self.room_priority_key)
 
     def find_task(
         self,
@@ -257,7 +360,13 @@ class WorkCalendar:
             room_free = room_prefix[task.duration_slots:] - room_prefix[:-task.duration_slots] == 0
             transfer_slots = 0 if last_room is None or room == last_room else self.transfer_slots
             transfer_release = release + pd.Timedelta(minutes=transfer_slots * SLOT_MINUTES)
-            feasible = valid & room_free & np.asarray(starts >= transfer_release, dtype=bool)
+            patient_free = self.patient_available(task.patient_id, starts, ends, room)
+            feasible = (
+                valid
+                & room_free
+                & patient_free
+                & np.asarray(starts >= transfer_release, dtype=bool)
+            )
             positions = np.flatnonzero(feasible)
             if positions.size:
                 earliest_by_room[room] = int(indices[positions[0]])
@@ -318,6 +427,7 @@ def load_inputs(
         items[column] = as_bool(items[column])
     event_special = events.set_index("event_id")["special_case"].to_dict()
     event_bladder_ready = events.set_index("event_id")["bladder_ready_dt"].to_dict()
+    event_patient = events.set_index("event_id")["patient_id"].astype(str).to_dict()
     tasks: dict[str, list[Task]] = {}
     for event_id, group in items.groupby("event_id", sort=False):
         event_tasks: list[Task] = []
@@ -336,6 +446,7 @@ def load_inputs(
             event_tasks.append(
                 Task(
                     event_id=str(event_id),
+                    patient_id=event_patient[event_id],
                     item_index=int(row.item_index),
                     project_norm=str(row.project_norm),
                     category=str(row.category),
@@ -435,11 +546,7 @@ def plan_event(
     if common:
         candidate_rooms = sorted(
             common,
-            key=lambda room: (
-                calendar.room_work_slots[room],
-                calendar.room_scarcity.get(room, 0.0),
-                int(room),
-            ),
+            key=calendar.room_priority_key,
         )[:3]
         for room in candidate_rooms:
             steps = tentative_plan(calendar, orders[0], release, latest_end, room)
@@ -475,16 +582,78 @@ def event_priority(
             kind="stable",
         )
     elif group == "inpatient" and strategy == "slack":
-        subset["slack_key"] = subset["deadline_dt"] - pd.to_timedelta(
-            subset["work_slots"] * SLOT_MINUTES, unit="min"
+        # Static arrival-window slack: (deadline - order time) - processing.
+        # This is distinct from the former absolute key deadline-processing.
+        subset["arrival_slack_minutes"] = (
+            (subset["deadline_dt"] - subset["order_dt"]).dt.total_seconds() / 60
+            - subset["work_slots"] * SLOT_MINUTES
         )
         subset = subset.sort_values(
-            ["slack_key", "minimum_room_count", "deadline_dt", "event_id"],
+            ["arrival_slack_minutes", "release_dt", "minimum_room_count", "deadline_dt", "event_id"],
             kind="stable",
         )
     else:
         subset = subset.sort_values(["release_dt", "event_id"], kind="stable")
     return subset["event_id"].tolist()
+
+
+def create_calendar(
+    slot_capacity: pd.DataFrame,
+    room_ids: list[str],
+    policy: str,
+    capacity_column: str,
+    transfer_minutes: int = TRANSFER_MINUTES,
+    *,
+    start_date: pd.Timestamp | None = None,
+    end_date_exclusive: pd.Timestamp | None = None,
+    room_scarcity: dict[str, float] | None = None,
+) -> WorkCalendar:
+    """Construct the calendar used by both production P2 and production P3."""
+    config = POLICIES[policy]
+    return WorkCalendar(
+        source_config.SIMULATION_START if start_date is None else start_date,
+        (
+            source_config.HOLDOUT_END_EXCLUSIVE + pd.Timedelta(days=FOLLOWUP_DAYS)
+            if end_date_exclusive is None
+            else end_date_exclusive
+        ),
+        room_ids,
+        slot_capacity,
+        capacity_column,
+        task_room_scarcity() if room_scarcity is None else room_scarcity,
+        config["room_mode"],
+        transfer_minutes,
+    )
+
+
+def run_group_with_policy(
+    calendar: WorkCalendar,
+    events: pd.DataFrame,
+    tasks: dict[str, list[Task]],
+    policy: str,
+    group: str,
+    *,
+    strategy_override: str | None = None,
+) -> tuple[list[str], dict[str, list[PlanStep]], dict[str, str]]:
+    """Apply the shared patient order and event planner for one demand group."""
+    config = POLICIES[policy]
+    strategy = config[group] if strategy_override is None else strategy_override
+    event_ids = event_priority(events, tasks, group, strategy)
+    lookup = events.set_index("event_id")
+    plans, failure = schedule_group(calendar, event_ids, lookup, tasks)
+    return event_ids, plans, failure
+
+
+def p2_metrics_lexicographic_key(metrics: dict[str, Any] | pd.Series) -> tuple[Any, ...]:
+    """Fixed P2 policy selection key; smaller tuples are preferred."""
+    return (
+        -int(metrics["inpatient_complete_48h"]),
+        float(metrics["inpatient_wait_p90_hours_conditional"]),
+        float(metrics["inpatient_wait_p50_hours_conditional"]),
+        float(metrics["inpatient_room_switch_rate_multi"]),
+        float(metrics["scheduled_minutes"]),
+        str(metrics["policy"]),
+    )
 
 
 def schedule_group(
@@ -586,7 +755,7 @@ def outcomes_from_schedule(
     result["waiting_hours"] = (
         result["first_start_dt"] - result["release_dt"]
     ).dt.total_seconds() / 3600
-    result["failure_reason"] = result["event_id"].map(failure)
+    result["failure_reason"] = result["event_id"].map(failure).astype("string")
     result.loc[
         ~result["deadline_met"] & result["failure_reason"].isna(), "failure_reason"
     ] = "completed_after_deadline"
@@ -688,28 +857,14 @@ def run_policy(
     pd.DataFrame,
     tuple[WorkCalendar, dict[str, list[PlanStep]], dict[str, str]],
 ]:
-    config = POLICIES[policy]
-    scarcity = task_room_scarcity()
-    simulation_start = source_config.SIMULATION_START
-    simulation_end = source_config.HOLDOUT_END_EXCLUSIVE + pd.Timedelta(days=FOLLOWUP_DAYS)
-    lookup = events.set_index("event_id")
-    inpatient_order = event_priority(events, tasks, "inpatient", config["inpatient"])
     if background_state is None:
-        calendar = WorkCalendar(
-            simulation_start,
-            simulation_end,
-            room_ids,
-            slot_capacity,
-            capacity_column,
-            scarcity,
-            config["background"],
-            transfer_minutes,
+        calendar = create_calendar(
+            slot_capacity, room_ids, policy, capacity_column, transfer_minutes,
         )
-        background_order = event_priority(events, tasks, "background", config["background"])
-        print(f"{policy}: scheduling {len(background_order):,} outpatient/physical-exam events", flush=True)
-        background_plans, background_failure = schedule_group(
-            calendar, background_order, lookup, tasks
+        background_order, background_plans, background_failure = run_group_with_policy(
+            calendar, events, tasks, policy, "background",
         )
+        print(f"{policy}: processed {len(background_order):,} outpatient/physical-exam events", flush=True)
         reusable_background = (
             calendar.clone(),
             background_plans,
@@ -720,10 +875,10 @@ def run_policy(
         calendar = stored_calendar.clone()
         reusable_background = background_state
         print(f"{policy}: reusing identical background allocation", flush=True)
-    print(f"{policy}: scheduling {len(inpatient_order):,} inpatient events", flush=True)
-    inpatient_plans, inpatient_failure = schedule_group(
-        calendar, inpatient_order, lookup, tasks
+    inpatient_order, inpatient_plans, inpatient_failure = run_group_with_policy(
+        calendar, events, tasks, policy, "inpatient",
     )
+    print(f"{policy}: processed {len(inpatient_order):,} inpatient events", flush=True)
     plans = {**background_plans, **inpatient_plans}
     failure = {**background_failure, **inpatient_failure}
     schedule = plan_to_schedule(calendar, plans, events, policy, room_names)
@@ -790,9 +945,8 @@ def main() -> None:
         parser.error("--main-only and --sensitivity-only cannot be used together")
     if args.sensitivity_scenario and not args.sensitivity_only:
         parser.error("--sensitivity-scenario requires --sensitivity-only")
-    if args.main_policy and args.sensitivity_only:
-        parser.error("--main-policy cannot be combined with --sensitivity-only")
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    authoritative_policy = resolve_authoritative_policy(args.main_policy)
 
     metrics_rows: list[dict[str, Any]] = []
     daily_rows: list[pd.DataFrame] = []
@@ -813,11 +967,13 @@ def main() -> None:
             "five_percent_upper", "hierarchical", source_config.BLADDER_PREPARATION_MINUTES
         )
         background_cache: dict[
-            str, tuple[WorkCalendar, dict[str, list[PlanStep]], dict[str, str]]
+            tuple[str, str], tuple[WorkCalendar, dict[str, list[PlanStep]], dict[str, str]]
         ] = {}
-        selected_policies = [args.main_policy] if args.main_policy else list(POLICIES)
+        selected_policies = [args.main_policy] if args.main_policy else list(P2_POLICY_CANDIDATES)
         for policy in selected_policies:
-            background_key = POLICIES[policy]["background"]
+            background_key = (
+                POLICIES[policy]["background"], POLICIES[policy]["room_mode"],
+            )
             schedule, outcomes, metrics, daily, utilization, reusable_background = run_policy(
                 main_events,
                 main_tasks,
@@ -833,7 +989,7 @@ def main() -> None:
             background_cache.setdefault(background_key, reusable_background)
             metrics_rows.append(metrics)
             daily_rows.append(daily.assign(scenario="main_5pct_upper"))
-            if policy == AUTHORITATIVE_POLICY:
+            if policy == authoritative_policy:
                 authoritative_schedule = schedule
                 authoritative_outcomes = outcomes
                 authoritative_utilization = utilization
@@ -865,7 +1021,7 @@ def main() -> None:
             capacity,
             rooms,
             names,
-            AUTHORITATIVE_POLICY,
+            authoritative_policy,
             capacity_column,
             name,
             transfer_minutes,
@@ -895,7 +1051,7 @@ def main() -> None:
             args.output_dir / "inpatient_recommended_schedule.csv", index=False, encoding="utf-8-sig"
         )
     summary = {
-        "authoritative_policy": AUTHORITATIVE_POLICY,
+        "authoritative_policy": authoritative_policy,
         "annual_state_reset_count": 1,
         "simulation_start": str(source_config.SIMULATION_START.date()),
         "simulation_end_exclusive": str(

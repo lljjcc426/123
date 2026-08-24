@@ -377,6 +377,8 @@ def reviewed_alias_rule(project: str) -> tuple[str, list[str], str, str]:
     if "胡桃夹" in project or "精囊" in project:
         return "D", [], "anatomy_not_listed", "表1没有足够接近的专项部位证据"
     if project.startswith("床旁"):
+        if re.search(r"血管|动脉|静脉", project):
+            return "D", [], "bedside_vascular_specialty_not_listed", "床旁地点描述不能证明血管多普勒专项能力"
         if re.search(r"腹部|腹水|泌尿系|前列腺|胸部|胸水", project):
             return "C", [r"带有床旁的超声项目"], "explicit_bedside_generalization", "7号机原文只对常规床旁部位作有限泛化"
         return "D", [], "bedside_location_without_specialty", "床旁地点证据不足以覆盖该专项项目"
@@ -486,6 +488,7 @@ def project_machine_matches(
     for project_row in unmatched.itertuples(index=False):
         project = str(project_row.project_norm)
         level, patterns, rule, reason = reviewed_alias_rule(project)
+        attempted_review_rule = rule
         selected = machines_matching_patterns(evidence, patterns)
         if level == "C" and project.startswith("床旁"):
             selected = selected[selected["machine_id"].eq("7")]
@@ -523,6 +526,7 @@ def project_machine_matches(
                     f"{row.machine_id}:{row.evidence_text}" for row in selected.itertuples(index=False)
                 ) if level != "D" else "",
                 "review_rule": rule,
+                "attempted_review_rule": attempted_review_rule,
                 "review_reason": reason,
             }
         )

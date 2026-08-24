@@ -3,8 +3,8 @@
   "training_end": "2024-03-31",
   "holdout_report_times_used": false,
   "is_measured_scan_duration": false,
-  "valid_single_project_gaps": 497102,
-  "complete_doctor_project_estimates": 42336,
-  "direct_evidence_pairs": 6416,
+  "valid_single_project_gaps": 496312,
+  "complete_doctor_project_estimates": 29204,
+  "direct_evidence_pairs": 6107,
   "machine_count": 22
 }

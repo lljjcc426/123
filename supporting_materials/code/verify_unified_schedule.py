@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 from pathlib import Path
 
 import numpy as np
@@ -18,7 +17,6 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 INPUT = ROOT / "supporting_materials" / "processed_data" / "unified_holdout"
-DEFAULT_RESULT = ROOT / "supporting_materials" / "results" / "unified_schedule"
 SLOT_MINUTES = 5
 TRANSFER_MINUTES = 10
 
@@ -50,9 +48,37 @@ def slot_index(timestamp: pd.Timestamp) -> int | None:
     return None
 
 
+def patient_timeline_violations(
+    schedule: pd.DataFrame, transfer_minutes: int,
+) -> tuple[int, int]:
+    """Count adjacent patient overlaps and cross-room transfer shortfalls."""
+    overlap = 0
+    transfer_bad = 0
+    for _, group in schedule.sort_values(
+        ["patient_id", "start_dt", "end_dt", "event_id", "sequence_position"],
+        kind="stable",
+    ).groupby("patient_id", sort=False):
+        if len(group) < 2:
+            continue
+        starts = group["start_dt"].iloc[1:].reset_index(drop=True)
+        prior_ends = group["end_dt"].iloc[:-1].reset_index(drop=True)
+        prior_rooms = group["room_id"].iloc[:-1].reset_index(drop=True)
+        current_rooms = group["room_id"].iloc[1:].reset_index(drop=True)
+        switches = current_rooms.ne(prior_rooms)
+        overlap += int(starts.lt(prior_ends).sum())
+        transfer_bad += int(
+            (
+                switches
+                & starts.lt(prior_ends + pd.Timedelta(minutes=transfer_minutes))
+            ).sum()
+        )
+    return overlap, transfer_bad
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--result-dir", type=Path, default=DEFAULT_RESULT)
+    parser.add_argument("--result-dir", type=Path, required=True)
+    parser.add_argument("--scenario", choices=["p2", "p3"])
     parser.add_argument("--preparation-mode", choices=["item", "event"], default="item")
     parser.add_argument("--transfer-minutes", type=int, default=TRANSFER_MINUTES)
     args = parser.parse_args()
@@ -77,21 +103,13 @@ def main() -> None:
     )
     capacity = pd.read_csv(INPUT / "doctor_slot_capacity.csv", encoding="utf-8-sig")
     for frame, columns in [
-        (events, ["special_case", "evaluation_cohort", "bedside", "fasting", "bladder"]),
+        (events, ["mandatory_background", "special_case", "evaluation_cohort", "bedside", "fasting", "bladder"]),
         (items, ["item_bedside", "item_fasting", "item_bladder", "event_bedside", "event_fasting", "event_bladder"]),
         (schedule, ["bedside", "fasting", "bladder", "room_switch_from_previous"]),
         (outcomes, ["complete_event", "deadline_met", "evaluation_cohort"]),
     ]:
         for column in columns:
             frame[column] = as_bool(frame[column])
-
-    # P2 intentionally exports the inpatient cohort only, whereas P3 exports
-    # all three sources.  Scope the independent verifier to the cohort named
-    # by the outcome table so that an inpatient-only result is not compared
-    # against unrelated outpatient and physical-exam events.
-    result_event_ids = set(outcomes["event_id"].astype(str))
-    events = events[events["event_id"].astype(str).isin(result_event_ids)].copy()
-    items = items[items["event_id"].astype(str).isin(result_event_ids)].copy()
 
     checks: dict[str, dict[str, object]] = {}
 
@@ -102,12 +120,90 @@ def main() -> None:
             "detail": detail,
         }
 
+    scenario = args.scenario or {
+        "p2_inpatient_only": "p2",
+        "p3_joint": "p3",
+    }.get(result_dir.name)
+    if scenario is None:
+        raise ValueError(
+            "cannot infer P2/P3 result scope from the directory name; pass --scenario"
+        )
+
+    for frame in (events, items, schedule, outcomes):
+        frame["event_id"] = frame["event_id"].astype(str)
+    schedule["patient_id"] = schedule["patient_id"].astype(str)
+
+    expected_events = (
+        events[~events["mandatory_background"]].copy()
+        if scenario == "p2"
+        else events.copy()
+    )
+    expected_event_ids = set(expected_events["event_id"])
+    duplicate_outcomes = int(outcomes.duplicated("event_id").sum())
+    record("outcome_event_id_unique", duplicate_outcomes)
+    outcomes = outcomes.drop_duplicates("event_id", keep="first").copy()
+    result_event_ids = set(outcomes["event_id"])
+    missing_outcomes = expected_event_ids - result_event_ids
+    unexpected_outcomes = result_event_ids - expected_event_ids
+    record(
+        "result_event_scope_complete",
+        len(missing_outcomes) + len(unexpected_outcomes),
+        {
+            "scenario": scenario,
+            "expected_state_events": len(expected_event_ids),
+            "outcome_events": len(result_event_ids),
+            "missing_count": len(missing_outcomes),
+            "unexpected_count": len(unexpected_outcomes),
+            "missing_examples": sorted(missing_outcomes)[:10],
+            "unexpected_examples": sorted(unexpected_outcomes)[:10],
+        },
+    )
+    outcome_scope = outcomes[
+        ["event_id", "patient_id", "source", "evaluation_cohort"]
+    ].merge(
+        expected_events[["event_id", "patient_id", "source", "evaluation_cohort"]],
+        on="event_id",
+        how="left",
+        suffixes=("_outcome", "_input"),
+        indicator=True,
+        validate="one_to_one",
+    )
+    evaluation_scope_bad = (
+        outcome_scope["_merge"].ne("both")
+        | outcome_scope["evaluation_cohort_outcome"].ne(
+            outcome_scope["evaluation_cohort_input"]
+        )
+    )
+    record(
+        "outcome_evaluation_cohort_matches_input",
+        int(evaluation_scope_bad.sum()),
+        "warm-up events remain in scheduler state but are excluded from evaluation statistics",
+    )
+    patient_source_bad = (
+        outcome_scope["_merge"].ne("both")
+        | outcome_scope["patient_id_outcome"].astype(str).ne(
+            outcome_scope["patient_id_input"].astype(str)
+        )
+        | outcome_scope["source_outcome"].astype(str).ne(
+            outcome_scope["source_input"].astype(str)
+        )
+    )
+    record(
+        "outcome_patient_source_matches_input",
+        int(patient_source_bad.sum()),
+    )
+    record(
+        "scheduled_event_has_outcome",
+        int((~schedule["event_id"].isin(result_event_ids)).sum()),
+    )
+    events = expected_events
+    items = items[items["event_id"].isin(expected_event_ids)].copy()
+
     record(
         "unique_exported_task_key",
         int(schedule.duplicated(["event_id", "item_index"]).sum()),
         "each scheduled task must occur exactly once",
     )
-    item_keys = items[["event_id", "item_index"]].drop_duplicates()
     merged = schedule.merge(
         items,
         on=["event_id", "item_index"],
@@ -123,6 +219,11 @@ def main() -> None:
     merged["bladder_input"] = merged[f"{prefix}_bladder"]
 
     event_meta = events.set_index("event_id")
+    scheduled_patient = merged["event_id"].map(event_meta["patient_id"]).astype(str)
+    record(
+        "scheduled_patient_matches_input",
+        int(merged["patient_id"].astype(str).ne(scheduled_patient).sum()),
+    )
     merged["special_case_input"] = merged["event_id"].map(event_meta["special_case"])
     merged["expected_duration_minutes"] = np.where(
         merged["special_case_input"],
@@ -213,8 +314,22 @@ def main() -> None:
         event_overlap += int(starts.lt(ends).sum())
         transfer_bad += int((switches & starts.lt(ends + pd.Timedelta(minutes=args.transfer_minutes))).sum())
     record("contiguous_event_sequence_numbers", sequence_bad)
-    record("no_same_patient_task_overlap", event_overlap)
-    record("cross_room_transfer_at_least_10min", transfer_bad)
+    record("no_same_event_task_overlap", event_overlap)
+    record(
+        "within_event_cross_room_transfer_at_least_configured_minutes",
+        transfer_bad,
+        {"transfer_minutes": args.transfer_minutes},
+    )
+
+    patient_overlap, patient_transfer_bad = patient_timeline_violations(
+        schedule, args.transfer_minutes,
+    )
+    record("no_patient_task_overlap_across_events", patient_overlap)
+    record(
+        "adjacent_patient_cross_room_transfer_at_least_configured_minutes",
+        patient_transfer_bad,
+        {"transfer_minutes": args.transfer_minutes},
+    )
 
     # Reconstruct doctor concurrency by expanding each scheduled interval to
     # its occupied 5-minute starts, then compare with weekday-slot capacity.
@@ -262,9 +377,22 @@ def main() -> None:
     passed = all(entry["passed"] for entry in checks.values())
     report = {
         "passed": passed,
+        "scenario": scenario,
         "schedule_rows": int(len(schedule)),
         "scheduled_events": int(schedule["event_id"].nunique()),
         "input_events": int(len(events)),
+        "evaluation_scope": {
+            "state_events": int(len(events)),
+            "evaluation_events": int(events["evaluation_cohort"].sum()),
+            "warmup_state_events": int((~events["evaluation_cohort"]).sum()),
+            "evaluation_inpatient_events": int(
+                (events["evaluation_cohort"] & events["source"].eq("住院")).sum()
+            ),
+            "evaluation_background_events": int(
+                (events["evaluation_cohort"] & ~events["source"].eq("住院")).sum()
+            ),
+            "warmup_in_statistics": False,
+        },
         "checks": checks,
     }
     result_dir.mkdir(parents=True, exist_ok=True)

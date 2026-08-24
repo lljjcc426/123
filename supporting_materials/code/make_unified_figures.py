@@ -17,6 +17,19 @@ CAL = ROOT / "supporting_materials/results/calibration"
 OUT = ROOT / "supporting_materials/figures/paper_final"
 BLUE, ORANGE, GREEN, RED, PURPLE, GRAY = "#276FBF", "#F28E2B", "#3A9D5D", "#C93C3C", "#7A5195", "#6B7280"
 LIGHT, GRID = "#E8EEF5", "#D7DEE8"
+POLICY_LABELS = {
+    "FCFS_SHARED": "FCFS\n最低编号",
+    "SLACK_GUARD_SHARED": "松弛度\n最低编号",
+    "FCFS_LOAD_BALANCED": "FCFS\n负荷均衡",
+    "SLACK_LOAD_BALANCED": "松弛度\n负荷均衡",
+    "FCFS_SCARCITY_PRESERVING": "FCFS\n稀缺保护",
+    "SLACK_SCARCITY_PRESERVING": "松弛度\n稀缺保护",
+}
+
+
+def alpha_label(value: float) -> str:
+    text = f"{float(value):.3f}"
+    return text[:-1] if text.endswith("0") else text
 
 def configure() -> None:
     available = {font.name for font in font_manager.fontManager.ttflist}
@@ -77,23 +90,31 @@ def capability_coverage() -> None:
 
 def p2_policy() -> None:
     frame = pd.read_csv(FROZEN / "p2_inpatient_only/policy_metrics.csv")
-    labels=["共享FCFS","最小松弛度保护"]; x=np.arange(2)
-    fig, axes=plt.subplots(1,2,figsize=(9.2,3.8))
-    axes[0].bar(x,frame["inpatient_48h_rate"],color=[BLUE,ORANGE],width=.56)
-    axes[0].set_xticks(x,labels); axes[0].set_ylim(.84,.86); axes[0].yaxis.set_major_formatter(lambda v,_:f"{v:.1%}"); axes[0].set_title("住院48小时完整完成率")
-    axes[1].bar(x,frame["inpatient_wait_p50_hours_conditional"],color=[BLUE,ORANGE],width=.56,label="P50")
-    axes[1].bar(x,frame["inpatient_wait_p90_hours_conditional"]-frame["inpatient_wait_p50_hours_conditional"],bottom=frame["inpatient_wait_p50_hours_conditional"],color=[LIGHT,LIGHT],width=.56,label="P50至P90")
-    axes[1].set_xticks(x,labels); axes[1].set_ylabel("小时"); axes[1].set_title("条件等待时间"); axes[1].legend(frameon=False)
+    labels=[POLICY_LABELS[policy] for policy in frame["policy"]]
+    x=np.arange(len(frame)); colors=[BLUE,ORANGE,GREEN,PURPLE,GRAY,RED][:len(frame)]
+    fig, axes=plt.subplots(1,2,figsize=(11.4,4.2))
+    axes[0].plot(x,frame["inpatient_48h_rate"],color=GRID,lw=1.4,zorder=1)
+    axes[0].scatter(x,frame["inpatient_48h_rate"],color=colors,s=70,zorder=2)
+    rate_min, rate_max = frame["inpatient_48h_rate"].min(), frame["inpatient_48h_rate"].max()
+    rate_pad = max((rate_max-rate_min)*.2, .003)
+    axes[0].set_xticks(x,labels,fontsize=8); axes[0].set_ylim(max(0,rate_min-rate_pad),min(1,rate_max+rate_pad)); axes[0].yaxis.set_major_formatter(lambda v,_:f"{v:.1%}"); axes[0].set_title("住院48小时完整完成率")
+    axes[1].bar(x,frame["inpatient_wait_p50_hours_conditional"],color=colors,width=.62,label="P50")
+    axes[1].bar(x,frame["inpatient_wait_p90_hours_conditional"]-frame["inpatient_wait_p50_hours_conditional"],bottom=frame["inpatient_wait_p50_hours_conditional"],color=LIGHT,width=.62,label="P50至P90")
+    axes[1].set_xticks(x,labels,fontsize=8); axes[1].set_ylabel("小时"); axes[1].set_title("条件等待时间"); axes[1].legend(frameon=False)
     for ax in axes: ax.grid(axis="y",color=GRID,zorder=0)
     fig.tight_layout(); save(fig, "fig04_p2_policy")
 
 def pareto() -> None:
     frame=pd.read_csv(FROZEN/"p3_joint/pareto_metrics.csv")
+    frame=frame[
+        frame["epsilon_feasible"].eq(True) & frame["pareto_nondominated"].eq(True)
+    ].sort_values(["background_on_time_rate", "inpatient_48h_rate"]).copy()
     selected=float(json.loads((FROZEN/"p3_joint/selection.json").read_text(encoding="utf-8"))["selected_alpha"])
     fig,ax=plt.subplots(figsize=(7.4,5.0))
     ax.plot(frame["background_on_time_rate"],frame["inpatient_48h_rate"],"-o",color=BLUE,lw=1.8,ms=6)
-    for row in frame.itertuples(index=False):
-        ax.annotate(f"$\\alpha$={row.background_target_alpha:.2f}",(row.background_on_time_rate,row.inpatient_48h_rate),xytext=(5,6),textcoords="offset points",fontsize=8)
+    for index, row in enumerate(frame.itertuples(index=False)):
+        offset_y = 7 if index % 2 == 0 else -13
+        ax.annotate(f"$\\alpha$={alpha_label(row.background_target_alpha)}",(row.background_on_time_rate,row.inpatient_48h_rate),xytext=(5,offset_y),textcoords="offset points",fontsize=8)
     mark=frame[np.isclose(frame["background_target_alpha"],selected)].iloc[0]
     ax.scatter(mark["background_on_time_rate"],mark["inpatient_48h_rate"],s=180,color=RED,edgecolor="white",zorder=5,label="推荐折中点")
     ax.xaxis.set_major_formatter(lambda v,_:f"{v:.0%}"); ax.yaxis.set_major_formatter(lambda v,_:f"{v:.0%}")
@@ -103,11 +124,17 @@ def pareto() -> None:
 
 def calibration() -> None:
     frame=pd.read_csv(CAL/"calibration_metrics.csv")
+    scenario_order=[
+        "C0_historical_report", "C1_duration_only", "C2_standard_hours",
+        "C3_doctor_capacity", "C4_project_capability", "C5_item_preparation",
+        "C6_joint_background", "C7_formal_heuristic",
+    ]
+    frame=frame.set_index("scenario").loc[scenario_order].reset_index()
     labels=["历史报告","仅时长","标准班次","医生并发","设备能力","项目准备","背景竞争","正式策略"]
     colors=[GRAY,GREEN,GREEN,GREEN,ORANGE,ORANGE,RED,BLUE]
     fig,ax=plt.subplots(figsize=(10.0,4.2))
     bars=ax.bar(np.arange(len(frame)),frame["rate"],color=colors,width=.68)
-    ax.set_xticks(np.arange(len(frame)),labels,rotation=18,ha="right"); ax.set_ylim(.4,1.05); ax.yaxis.set_major_formatter(lambda v,_:f"{v:.0%}")
+    ax.set_xticks(np.arange(len(frame)),labels,rotation=18,ha="right"); ax.set_ylim(0,1.05); ax.yaxis.set_major_formatter(lambda v,_:f"{v:.0%}")
     for bar,val in zip(bars,frame["rate"]): ax.text(bar.get_x()+bar.get_width()/2,val+.015,f"{val:.1%}",ha="center",fontsize=8)
     ax.set_ylabel("完成率"); ax.set_title("从历史口径到正式联合排程的逐层现实校准"); ax.grid(axis="y",color=GRID)
     fig.tight_layout(); save(fig,"fig06_calibration")
@@ -157,12 +184,12 @@ def gantt() -> None:
 
 def modeling_flow() -> None:
     fig,ax=plt.subplots(figsize=(10.4,3.6)); ax.axis("off")
-    boxes=[("数据审计\n事件与边界",LIGHT),("P1参数层\n需求·时长·能力", "#DDE9F7"),("P2纯住院\n患者级排程","#DFF1E5"),("P3联合\nε约束与Pareto","#FCE8D2"),("三层验证\n冻结结果","#E9E0F0")]
+    boxes=[("数据整理\n事件与边界",LIGHT),("P1参数层\n需求·时长·能力", "#DDE9F7"),("P2纯住院\n患者级排程","#DFF1E5"),("P3联合\nε约束与Pareto","#FCE8D2"),("模型检验\n结果解释","#E9E0F0")]
     xs=np.linspace(.1,.9,len(boxes))
     for i,((label,color),x) in enumerate(zip(boxes,xs)):
         ax.text(x,.58,label,ha="center",va="center",fontsize=10,bbox=dict(boxstyle="round,pad=.6",facecolor=color,edgecolor="#607D8B"),transform=ax.transAxes)
         if i<len(boxes)-1: ax.annotate("",xy=(xs[i+1]-.09,.58),xytext=(x+.09,.58),arrowprops=dict(arrowstyle="->",color="#607D8B",lw=1.4),xycoords=ax.transAxes)
-    ax.text(.5,.16,"训练期冻结参数（至2024-03-31）  →  留出期仅评价（2024-04-01至2025-03-31）",ha="center",color=GRAY,transform=ax.transAxes)
+    ax.text(.5,.16,"训练期估计参数（至2024-03-31）  →  留出期仅评价（2024-04-01至2025-03-31）",ha="center",color=GRAY,transform=ax.transAxes)
     ax.set_title("统一患者—项目—设备—医生排程建模链",pad=18)
     fig.tight_layout(); save(fig,"fig10_modeling_flow")
 

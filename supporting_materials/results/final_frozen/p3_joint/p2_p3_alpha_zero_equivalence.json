@@ -1,0 +1,46 @@
+{
+  "passed": true,
+  "alpha": 0.0,
+  "alpha_match": true,
+  "detail_saved": true,
+  "selected_policy": "FCFS_LOAD_BALANCED",
+  "p3_policy": "FCFS_LOAD_BALANCED",
+  "policy_match": true,
+  "patient_constraint_scope": "patient_id across all events: no overlap; different-room adjacent tasks require configured transfer minutes in both temporal directions",
+  "patient_constraint_scope_match": true,
+  "transfer_setting_match": true,
+  "p2_transfer_minutes": 10,
+  "p3_transfer_minutes": 10,
+  "p2_patient_overlap_violations": 0,
+  "p2_patient_transfer_violations": 0,
+  "p3_patient_overlap_violations": 0,
+  "p3_patient_transfer_violations": 0,
+  "complete_count_match": true,
+  "p2_task_rows": 117843,
+  "p3_inpatient_task_rows": 117843,
+  "task_mismatch_rows": 0,
+  "p2_outcome_rows": 71029,
+  "p3_inpatient_outcome_rows": 71029,
+  "outcome_mismatch_rows": 0,
+  "comparison_columns": {
+    "tasks": [
+      "event_id",
+      "patient_id",
+      "item_index",
+      "sequence_position",
+      "start_dt",
+      "end_dt",
+      "room_id",
+      "duration_minutes",
+      "transfer_minutes_before"
+    ],
+    "outcomes": [
+      "event_id",
+      "complete_event",
+      "deadline_met",
+      "first_start_dt",
+      "completion_dt",
+      "failure_reason"
+    ]
+  }
+}
